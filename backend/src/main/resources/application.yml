@@ -4,3 +4,27 @@ server:
 spring:
   application:
     name: music-stream-api
+  datasource:
+    url: jdbc:mysql://localhost:3306/music_stream?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+deezer:
+  base-url: https://api.deezer.com
+
+jamendo:
+  base-url: https://api.jamendo.com/v3.0
+  client-id: ${JAMENDO_CLIENT_ID:}
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+      - http://127.0.0.1:4200
