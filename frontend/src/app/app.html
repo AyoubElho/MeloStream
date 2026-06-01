@@ -1,30 +1,680 @@
-<main class="starter-page">
-  <section class="hero">
-    <span class="eyebrow">MeloStream</span>
-    <h1>Base initiale du projet</h1>
-    <p>
-      Ce dossier contient seulement le squelette Spring Boot et Angular pour
-      commencer le travail en equipe.
-    </p>
-  </section>
+@if (!user()) {
+  <main class="auth-page">
+    <section class="auth-copy">
+      <span class="eyebrow">MeloStream</span>
+      <h1>Votre espace musical pour ecouter en ligne.</h1>
+      <p>
+        Recherchez des titres, ecoutez les morceaux disponibles et gardez vos favoris dans votre espace.
+      </p>
+    </section>
 
-  <section class="task-grid" aria-label="Repartition initiale">
-    <article>
-      <span>01</span>
-      <h2>Authentification</h2>
-      <p>Inscription, connexion, securite et compte utilisateur.</p>
-    </article>
+    <section class="auth-panel">
+      <div class="auth-heading">
+        <span>{{ authMode() === 'login' ? 'Bienvenue' : 'Nouveau compte' }}</span>
+        <h2>{{ authMode() === 'login' ? 'Connectez-vous' : 'Creer votre espace' }}</h2>
+        <p>
+          {{
+            authMode() === 'login'
+              ? 'Accedez a votre bibliotheque et reprenez votre ecoute.'
+              : 'Choisissez un username unique et protegez votre compte.'
+          }}
+        </p>
+      </div>
 
-    <article>
-      <span>02</span>
-      <h2>Catalogue musical</h2>
-      <p>Recherche, ecoute, favoris et partage de chansons.</p>
-    </article>
+      <div class="auth-tabs">
+        <button type="button" [class.active]="authMode() === 'login'" (click)="switchAuthMode('login')">
+          <svg lucideLogIn class="icon" size="16"></svg>
+          Connexion
+        </button>
+        <button type="button" [class.active]="authMode() === 'register'" (click)="switchAuthMode('register')">
+          <svg lucideUserPlus class="icon" size="16"></svg>
+          Inscription
+        </button>
+      </div>
 
-    <article>
-      <span>03</span>
-      <h2>Playlists et admin</h2>
-      <p>Gestion des playlists, espace administrateur et README.</p>
-    </article>
-  </section>
-</main>
+      <form (ngSubmit)="submitAuth()" class="auth-form">
+        <label>
+          Email
+          <input name="email" type="email" [(ngModel)]="email" autocomplete="email" required />
+        </label>
+
+        @if (authMode() === 'register') {
+          <label>
+            Username
+            <input
+              name="username"
+              [(ngModel)]="username"
+              autocomplete="username"
+              minlength="3"
+              maxlength="80"
+              pattern="[a-zA-Z0-9._-]+"
+              required
+            />
+          </label>
+        }
+
+        <label>
+          Mot de passe
+          <input
+            name="password"
+            type="password"
+            [(ngModel)]="password"
+            [autocomplete]="authMode() === 'login' ? 'current-password' : 'new-password'"
+            minlength="6"
+            required
+          />
+        </label>
+
+        @if (authMode() === 'register') {
+          <label>
+            Confirmer le mot de passe
+            <input
+              name="passwordConfirmation"
+              type="password"
+              [(ngModel)]="passwordConfirmation"
+              autocomplete="new-password"
+              minlength="6"
+              required
+            />
+          </label>
+        }
+
+        @if (authError()) {
+          <div class="form-error">{{ authError() }}</div>
+        }
+
+        <button type="submit" [disabled]="isAuthLoading()">
+          @if (authMode() === 'login') {
+            <svg lucideLogIn class="icon" size="17"></svg>
+          } @else {
+            <svg lucideUserPlus class="icon" size="17"></svg>
+          }
+          {{ authMode() === 'login' ? 'Se connecter' : 'Creer mon compte' }}
+        </button>
+      </form>
+    </section>
+  </main>
+} @else {
+  <main class="dashboard">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="logo-disc"></span>
+          <span class="logo-wave"></span>
+        </span>
+        <div>
+          <strong>MeloStream</strong>
+          <span>Music hub</span>
+        </div>
+      </div>
+
+      <nav class="dashboard-nav" aria-label="Navigation">
+        <button type="button" [class.active]="activeView() === 'discover'" (click)="openView('discover')">
+          <svg lucideHouse class="icon" size="18"></svg>
+          Decouvrir
+        </button>
+        <button type="button" [class.active]="activeView() === 'library'" (click)="openView('library')">
+          <svg lucideLibrary class="icon" size="18"></svg>
+          Mes favoris
+        </button>
+        <button type="button" [class.active]="activeView() === 'playlists'" (click)="openView('playlists')">
+          <svg lucideListMusic class="icon" size="18"></svg>
+          Playlists
+        </button>
+        @if (isAdmin()) {
+          <button type="button" [class.active]="activeView() === 'admin'" (click)="openView('admin')">
+            <svg lucideShield class="icon" size="18"></svg>
+            Admin
+          </button>
+        }
+        <button type="button" [class.active]="activeView() === 'settings'" (click)="openView('settings')">
+          <svg lucideSettings class="icon" size="18"></svg>
+          Parametres
+        </button>
+      </nav>
+
+      <nav class="mood-list" aria-label="Categories musicales">
+        @for (mood of moods; track mood.value) {
+          <button
+            type="button"
+            [class.active]="activeView() === 'discover' && selectedMood() === mood.value"
+            (click)="chooseMood(mood.value)"
+          >
+            {{ mood.label }}
+          </button>
+        }
+      </nav>
+
+      <section class="profile-card">
+        <div class="profile-summary">
+          <div class="avatar avatar-sm">
+            @if (profileImage()) {
+              <img [src]="profileImage()!" [alt]="user()?.displayName || user()?.username" />
+            } @else {
+              <span>{{ profileInitials() }}</span>
+            }
+          </div>
+          <div>
+            <span>Connecte</span>
+            <strong>{{ user()?.displayName }}</strong>
+            <p>{{ '@' + user()?.username }}</p>
+            @if (isAdmin()) {
+              <small>ADMIN</small>
+            }
+          </div>
+        </div>
+        <p>{{ libraryCount() }} favoris - {{ playlistCount() }} playlists</p>
+        <button type="button" (click)="logout()">
+          <svg lucideLogOut class="icon" size="17"></svg>
+          Deconnexion
+        </button>
+      </section>
+    </aside>
+
+    <section class="content">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">Streaming musical</span>
+          <h1>Bonjour, {{ user()?.displayName }}</h1>
+        </div>
+
+        <div class="topbar-actions">
+          <form class="search" (ngSubmit)="searchTracks()">
+            <input
+              type="search"
+              name="query"
+              [(ngModel)]="query"
+              placeholder="Rechercher un titre, artiste ou album"
+              autocomplete="off"
+            />
+            <button type="submit" [disabled]="isLoading()">
+              <svg lucideSearch class="icon" size="18"></svg>
+              Rechercher
+            </button>
+          </form>
+
+        </div>
+      </header>
+
+      @if (shareMessage()) {
+        <div class="form-success share-status">{{ shareMessage() }}</div>
+      }
+
+      @if (shareError()) {
+        <div class="form-error share-status">{{ shareError() }}</div>
+      }
+
+      @if (activeView() === 'admin' && isAdmin()) {
+        <section class="admin-page">
+          <section class="section-heading admin-title">
+            <div>
+              <span class="eyebrow">Administration</span>
+              <h2>Gestion de la plateforme</h2>
+            </div>
+            <button type="button" class="admin-refresh" (click)="refreshAdmin()" [disabled]="isAdminLoading()">
+              <svg lucideRefreshCw class="icon" size="17"></svg>
+              Actualiser
+            </button>
+          </section>
+
+          @if (adminError()) {
+            <div class="state-panel error">{{ adminError() }}</div>
+          }
+
+          @if (adminMessage()) {
+            <div class="form-success">{{ adminMessage() }}</div>
+          }
+
+          <section class="admin-stats">
+            <article>
+              <svg lucideUsers class="stat-icon" size="22"></svg>
+              <span>Utilisateurs</span>
+              <strong>{{ adminStats()?.totalUsers ?? 0 }}</strong>
+            </article>
+            <article>
+              <svg lucideShield class="stat-icon" size="22"></svg>
+              <span>Admins</span>
+              <strong>{{ adminStats()?.totalAdmins ?? 0 }}</strong>
+            </article>
+            <article>
+              <svg lucideHeart class="stat-icon" size="22"></svg>
+              <span>Favoris</span>
+              <strong>{{ adminStats()?.totalFavorites ?? 0 }}</strong>
+            </article>
+            <article>
+              <svg lucideListMusic class="stat-icon" size="22"></svg>
+              <span>Playlists</span>
+              <strong>{{ adminStats()?.totalPlaylists ?? 0 }}</strong>
+            </article>
+            <article>
+              <svg lucideClock class="stat-icon" size="22"></svg>
+              <span>Sessions</span>
+              <strong>{{ adminStats()?.activeSessions ?? 0 }}</strong>
+            </article>
+          </section>
+
+          <section class="admin-table">
+            <header>
+              <h3>Utilisateurs</h3>
+              <span>{{ adminUsers().length }} comptes</span>
+            </header>
+
+            @if (isAdminLoading()) {
+              <div class="state-panel">Chargement des utilisateurs...</div>
+            } @else {
+              <div class="admin-rows">
+                @for (adminUser of adminUsers(); track adminUser.id) {
+                  <article class="admin-row">
+                    <div>
+                      <strong>{{ adminUser.displayName }}</strong>
+                      <span>{{ '@' + adminUser.username }}</span>
+                    </div>
+                    <div>
+                      <span>{{ adminUser.email }}</span>
+                    </div>
+                    <div class="role-cell">
+                      <select
+                        class="role-select"
+                        [class.admin]="adminUser.role === 'ADMIN'"
+                        [value]="adminUser.role"
+                        (change)="setUserRole(adminUser, $any($event.target).value)"
+                        [disabled]="isCurrentUser(adminUser) || isRoleUpdating(adminUser)"
+                        aria-label="Role utilisateur"
+                      >
+                        <option value="USER">User</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+                    <div class="admin-actions">
+                      <button
+                        type="button"
+                        class="danger"
+                        (click)="removeAdminUser(adminUser)"
+                        [disabled]="isCurrentUser(adminUser)"
+                      >
+                        <svg lucideTrash2 class="icon" size="16"></svg>
+                        Supprimer
+                      </button>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        </section>
+      } @else if (activeView() === 'playlists') {
+        <section class="playlists-page">
+          <section class="section-heading playlist-title">
+            <div>
+              <span class="eyebrow">Playlists</span>
+              <h2>Mes playlists</h2>
+            </div>
+            <p>{{ playlists().length }} playlists</p>
+          </section>
+
+          @if (playlistError()) {
+            <div class="form-error share-status">{{ playlistError() }}</div>
+          }
+
+          @if (playlistMessage()) {
+            <div class="form-success share-status">{{ playlistMessage() }}</div>
+          }
+
+          <section class="playlist-layout">
+            <aside class="playlist-panel">
+              <div class="playlist-panel-heading">
+                <span class="playlist-panel-icon" aria-hidden="true">
+                  <svg lucideListMusic class="icon" size="21"></svg>
+                </span>
+                <div>
+                  <strong>Collections</strong>
+                  <small>{{ playlistCount() }} playlists organisees</small>
+                </div>
+              </div>
+
+              <form class="playlist-form" (ngSubmit)="createPlaylist()">
+                <input
+                  name="newPlaylistName"
+                  [(ngModel)]="newPlaylistName"
+                  placeholder="Nouvelle playlist"
+                  maxlength="120"
+                  required
+                />
+                <button type="submit" [disabled]="isPlaylistSaving()">
+                  <svg lucidePlus class="icon" size="17"></svg>
+                  Creer
+                </button>
+              </form>
+
+              @if (playlists().length > 0) {
+                <div class="playlist-list">
+                  @for (playlist of playlists(); track playlist.id) {
+                    <button
+                      type="button"
+                      [class.active]="selectedPlaylistId() === playlist.id"
+                      (click)="selectPlaylist(playlist)"
+                    >
+                      <span class="playlist-list-icon" aria-hidden="true">
+                        <svg lucideListMusic class="icon" size="17"></svg>
+                      </span>
+                      <span>
+                        <strong>{{ playlist.name }}</strong>
+                        <small>{{ playlist.trackCount }} titres</small>
+                      </span>
+                    </button>
+                  }
+                </div>
+              } @else {
+                <div class="state-panel compact">Aucune playlist creee.</div>
+              }
+            </aside>
+
+            <section class="playlist-detail">
+              @if (selectedPlaylist(); as playlist) {
+                <header class="playlist-detail-header">
+                  @if (editingPlaylistId() === playlist.id) {
+                    <form class="playlist-rename" (ngSubmit)="savePlaylistName(playlist)">
+                      <input
+                        name="renamePlaylistName"
+                        [(ngModel)]="renamePlaylistName"
+                        maxlength="120"
+                        required
+                      />
+                      <button type="submit" [disabled]="isPlaylistSaving()">
+                        <svg lucideSave class="icon" size="16"></svg>
+                        Sauver
+                      </button>
+                      <button type="button" (click)="cancelRenamePlaylist()">
+                        <svg lucideX class="icon" size="16"></svg>
+                        Annuler
+                      </button>
+                    </form>
+                  } @else {
+                    <div class="playlist-selected">
+                      <span class="playlist-selected-icon" aria-hidden="true">
+                        <svg lucideListMusic class="icon" size="24"></svg>
+                      </span>
+                      <div>
+                        <span class="eyebrow">Selection</span>
+                        <h3>{{ playlist.name }}</h3>
+                        <p>{{ playlist.trackCount }} titres dans cette playlist</p>
+                      </div>
+                    </div>
+                    <div class="playlist-header-actions">
+                      <button type="button" (click)="beginRenamePlaylist(playlist)">
+                        <svg lucideSave class="icon" size="16"></svg>
+                        Renommer
+                      </button>
+                      <button type="button" class="danger" (click)="deletePlaylist(playlist)">
+                        <svg lucideTrash2 class="icon" size="16"></svg>
+                        Supprimer
+                      </button>
+                    </div>
+                  }
+                </header>
+
+                @if (playlist.tracks.length > 0) {
+                  <section class="playlist-track-list">
+                    @for (track of playlist.tracks; track track.source + ':' + track.id) {
+                      <article class="playlist-track">
+                        <button type="button" class="playlist-cover" (click)="playTrack(track)">
+                          <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+                        </button>
+                        <div>
+                          <strong>{{ track.title }}</strong>
+                          <span>{{ track.artist }} - {{ track.album }}</span>
+                        </div>
+                        <small class="playlist-duration">{{ formatDuration(track.duration) }}</small>
+                        <div class="playlist-track-actions">
+                          <button type="button" class="primary" (click)="playTrack(track)">
+                            <svg lucidePlay class="icon" size="15"></svg>
+                            Play
+                          </button>
+                          <button type="button" (click)="shareTrack(track)">
+                            <svg lucideShare2 class="icon" size="15"></svg>
+                            Partager
+                          </button>
+                          <button type="button" class="danger" (click)="removeTrackFromPlaylist(playlist, track)">
+                            <svg lucideTrash2 class="icon" size="15"></svg>
+                            Retirer
+                          </button>
+                        </div>
+                      </article>
+                    }
+                  </section>
+                } @else {
+                  <div class="state-panel">Aucun titre dans cette playlist.</div>
+                }
+              } @else {
+                <div class="state-panel">Cree une playlist pour organiser tes titres.</div>
+              }
+            </section>
+          </section>
+        </section>
+      } @else if (activeView() === 'settings') {
+        <section class="settings-page">
+          <div class="settings-heading">
+            <span class="eyebrow">Profil</span>
+            <h2>Parametres</h2>
+          </div>
+
+          <section class="settings-card">
+            <div class="settings-preview">
+              <div class="avatar avatar-lg">
+                @if (settingsAvatarUrl.trim()) {
+                  <img [src]="settingsAvatarUrl.trim()" [alt]="settingsDisplayName || user()?.username" />
+                } @else if (profileImage()) {
+                  <img [src]="profileImage()!" [alt]="user()?.displayName || user()?.username" />
+                } @else {
+                  <span>{{ profileInitials() }}</span>
+                }
+              </div>
+              <div>
+                <strong>{{ settingsDisplayName || user()?.displayName }}</strong>
+                <span>{{ '@' + user()?.username }}</span>
+              </div>
+            </div>
+
+            <form class="settings-form" (ngSubmit)="saveSettings()">
+              <label>
+                Nom affiche
+                <input
+                  name="settingsDisplayName"
+                  [(ngModel)]="settingsDisplayName"
+                  autocomplete="name"
+                  required
+                />
+              </label>
+
+              <label>
+                Image utilisateur
+                <input
+                  name="settingsAvatarUrl"
+                  [(ngModel)]="settingsAvatarUrl"
+                  placeholder="https://..."
+                  autocomplete="off"
+                />
+              </label>
+
+              <label>
+                Nouveau mot de passe
+                <input
+                  name="settingsPassword"
+                  type="password"
+                  [(ngModel)]="settingsPassword"
+                  autocomplete="new-password"
+                  placeholder="Laisser vide pour garder l'actuel"
+                />
+              </label>
+
+              @if (settingsError()) {
+                <div class="form-error">{{ settingsError() }}</div>
+              }
+
+              @if (settingsMessage()) {
+                <div class="form-success">{{ settingsMessage() }}</div>
+              }
+
+              <button type="submit" [disabled]="isSettingsSaving()">
+                <svg lucideSave class="icon" size="17"></svg>
+                Enregistrer
+              </button>
+            </form>
+          </section>
+        </section>
+      } @else if (activeView() === 'library') {
+        <section class="section-heading library-title">
+          <div>
+            <span class="eyebrow">Favoris</span>
+            <h2>Ma bibliotheque</h2>
+          </div>
+          <p>{{ savedTracks().length }} titres sauvegardes</p>
+        </section>
+
+        @if (savedTracks().length > 0) {
+          <section class="track-grid">
+            @for (track of savedTracks(); track track.id) {
+              <article class="track-card" [class.playing]="currentTrack()?.id === track.id">
+                <button type="button" class="cover-button" (click)="playTrack(track)">
+                  <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+                </button>
+                <div class="track-body">
+                  <div>
+                    <h3>{{ track.title }}</h3>
+                    <p>{{ track.artist }}</p>
+                  </div>
+                  <div class="track-actions">
+                    <span>{{ formatDuration(track.duration) }}</span>
+                    <button type="button" (click)="toggleFavorite(track)">
+                      <svg lucideTrash2 class="icon" size="15"></svg>
+                      Retirer
+                    </button>
+                    <button type="button" (click)="shareTrack(track)">
+                      <svg lucideShare2 class="icon" size="15"></svg>
+                      Partager
+                    </button>
+                    <button type="button" (click)="openPlaylistPicker(track)">
+                      <svg lucideListPlus class="icon" size="15"></svg>
+                      Playlist
+                    </button>
+                    <button type="button" class="primary" (click)="playTrack(track)">
+                      <svg lucidePlay class="icon" size="15"></svg>
+                      Play
+                    </button>
+                  </div>
+                </div>
+              </article>
+            }
+          </section>
+        } @else {
+          <div class="state-panel">Aucun favori pour le moment.</div>
+        }
+      } @else {
+        @if (heroTrack(); as track) {
+        <section class="feature">
+          <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+          <div>
+            <span class="eyebrow">Lecture rapide</span>
+            <h2>{{ track.title }}</h2>
+            <p>{{ track.artist }} - {{ track.album }}</p>
+            <div class="feature-actions">
+              <button type="button" class="primary" (click)="playTrack(track)">
+                <svg lucidePlay class="icon" size="18"></svg>
+                Ecouter
+              </button>
+              <button type="button" (click)="toggleFavorite(track)">
+                <svg lucideHeart class="icon" size="18"></svg>
+                {{ isFavorite(track) ? 'Retirer' : 'Sauvegarder' }}
+              </button>
+              <button type="button" (click)="shareTrack(track)">
+                <svg lucideShare2 class="icon" size="18"></svg>
+                Partager
+              </button>
+              <button type="button" (click)="openPlaylistPicker(track)">
+                <svg lucideListPlus class="icon" size="18"></svg>
+                Playlist
+              </button>
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="section-heading">
+        <div>
+          <span class="eyebrow">Catalogue</span>
+          <h2>{{ resultTitle() }}</h2>
+        </div>
+        <p>{{ tracks().length }} titres trouves</p>
+      </section>
+
+      @if (errorMessage()) {
+        <div class="state-panel error">{{ errorMessage() }}</div>
+      }
+
+      @if (isLoading()) {
+        <div class="track-grid" aria-label="Chargement">
+          @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+            <div class="track-card skeleton"></div>
+          }
+        </div>
+      } @else if (catalogTracks().length > 0) {
+        <section class="track-grid">
+          @for (track of catalogTracks(); track track.id) {
+            <article class="track-card" [class.playing]="currentTrack()?.id === track.id">
+              <button type="button" class="cover-button" (click)="playTrack(track)">
+                <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+              </button>
+              <div class="track-body">
+                <div>
+                  <h3>{{ track.title }}</h3>
+                  <p>{{ track.artist }}</p>
+                </div>
+                <div class="track-actions">
+                  <span>{{ formatDuration(track.duration) }}</span>
+                  <button type="button" (click)="toggleFavorite(track)">
+                    <svg lucideHeart class="icon" size="15"></svg>
+                    {{ isFavorite(track) ? 'Enregistre' : 'Sauvegarder' }}
+                  </button>
+                  <button type="button" (click)="shareTrack(track)">
+                    <svg lucideShare2 class="icon" size="15"></svg>
+                    Partager
+                  </button>
+                  <button type="button" (click)="openPlaylistPicker(track)">
+                    <svg lucideListPlus class="icon" size="15"></svg>
+                    Playlist
+                  </button>
+                  <button type="button" class="primary" (click)="playTrack(track)">
+                    <svg lucidePlay class="icon" size="15"></svg>
+                    Play
+                  </button>
+                </div>
+              </div>
+            </article>
+          }
+        </section>
+      } @else if (!errorMessage()) {
+        <div class="state-panel">Aucun titre trouve.</div>
+      }
+
+      @if (savedTracks().length > 0) {
+        <section class="section-heading library-heading">
+          <div>
+            <span class="eyebrow">Favoris</span>
+            <h2>Mes favoris</h2>
+          </div>
+        </section>
+
+        <section class="library-row">
+          @for (track of savedTracks(); track track.id) {
+            <button type="button" class="library-item" (click)="playTrack(track)">
+              <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+              <strong>{{ track.title }}</strong>
+              <span>{{ track.artist }}</span>
+            </button>
+          }
+        </section>
+      }
+      }
+    </section>
+  </main>
+}
