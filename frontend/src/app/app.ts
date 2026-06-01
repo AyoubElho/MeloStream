@@ -653,6 +653,88 @@ protected toggleFavorite(track: Track): void {
 
     return initials || 'U';
   }
+  private loadAdminDashboard(): void {
+    this.isAdminLoading.set(true);
+    this.adminError.set(null);
+
+    this.adminApi.stats().subscribe({
+      next: (stats) => this.adminStats.set(stats),
+      error: () => this.adminError.set('Impossible de charger les statistiques admin.'),
+    });
+
+    this.adminApi.users().pipe(finalize(() => this.isAdminLoading.set(false))).subscribe({
+      next: (users) => this.adminUsers.set(users),
+      error: () => {
+        this.adminUsers.set([]);
+        this.adminError.set('Impossible de charger les utilisateurs.');
+      },
+    });
+  }
+
+  private loadAdminStats(): void {
+    this.adminApi.stats().subscribe({
+      next: (stats) => this.adminStats.set(stats),
+    });
+  }
+
+  private parseRole(role: string): UserRole | null {
+    return role === 'USER' || role === 'ADMIN' ? role : null;
+  }
+
+  private setRoleUpdating(userId: number, isUpdating: boolean): void {
+    const nextIds = new Set(this.updatingRoleIds());
+    if (isUpdating) {
+      nextIds.add(userId);
+    } else {
+      nextIds.delete(userId);
+    }
+    this.updatingRoleIds.set(nextIds);
+  }
+
+  protected refreshAdmin(): void {
+    this.loadAdminDashboard();
+  }
 
 
+   protected setUserRole(user: AdminUser, role: string): void {
+    const nextRole = this.parseRole(role);
+    if (!nextRole || nextRole === user.role || this.isCurrentUser(user)) {
+      this.adminUsers.set([...this.adminUsers()]);
+      return;
+    }
+
+    this.adminMessage.set(null);
+    this.adminError.set(null);
+    this.setRoleUpdating(user.id, true);
+
+    this.adminApi.updateRole(user.id, nextRole).pipe(finalize(() => this.setRoleUpdating(user.id, false))).subscribe({
+      next: (updatedUser) => {
+        this.adminUsers.set(
+          this.adminUsers().map((adminUser) => adminUser.id === updatedUser.id ? updatedUser : adminUser),
+        );
+        this.adminMessage.set(`Role mis a jour pour @${updatedUser.username}.`);
+        this.loadAdminStats();
+      },
+      error: () => {
+        this.adminUsers.set([...this.adminUsers()]);
+        this.adminError.set('Impossible de modifier le role.');
+      },
+    });
+  }
+
+    protected removeAdminUser(user: AdminUser): void {
+    this.adminMessage.set(null);
+    this.adminError.set(null);
+    this.adminApi.deleteUser(user.id).subscribe({
+      next: () => {
+        this.adminUsers.set(this.adminUsers().filter((adminUser) => adminUser.id !== user.id));
+        this.adminMessage.set(`Utilisateur @${user.username} supprime.`);
+        this.loadAdminStats();
+      },
+      error: () => {
+        this.adminError.set('Impossible de supprimer cet utilisateur.');
+      },
+    });
+  }
+  
 }
