@@ -591,4 +591,68 @@ protected toggleFavorite(track: Track): void {
       });
   }
 
+  protected saveSettings(): void {
+    const displayName = this.settingsDisplayName.trim();
+    if (!displayName) {
+      this.settingsError.set('Le nom affiche est requis.');
+      this.settingsMessage.set(null);
+      return;
+    }
+
+    this.isSettingsSaving.set(true);
+    this.settingsError.set(null);
+    this.settingsMessage.set(null);
+
+    this.authApi
+      .updateProfile({
+        displayName,
+        avatarUrl: this.settingsAvatarUrl.trim(),
+        password: this.settingsPassword,
+      })
+      .pipe(finalize(() => this.isSettingsSaving.set(false)))
+      .subscribe({
+        next: (user) => {
+          this.user.set(user);
+          this.syncSettingsForm(user);
+          this.settingsMessage.set('Profil mis a jour.');
+        },
+        error: () => {
+          this.settingsError.set('Impossible de sauvegarder le profil.');
+        },
+      });
+  }
+ private syncSettingsForm(user = this.user()): void {
+    if (!user) {
+      this.settingsDisplayName = '';
+      this.settingsAvatarUrl = '';
+      this.settingsPassword = '';
+      this.settingsError.set(null);
+      this.settingsMessage.set(null);
+      return;
+    }
+
+    this.settingsDisplayName = user.displayName;
+    this.settingsAvatarUrl = user.avatarUrl ?? '';
+    this.settingsPassword = '';
+    this.settingsError.set(null);
+  }
+
+  protected profileImage(): string | null {
+    const avatarUrl = this.user()?.avatarUrl?.trim();
+    return avatarUrl ? avatarUrl : null;
+  }
+
+  protected profileInitials(): string {
+    const name = this.user()?.displayName || this.user()?.email || this.user()?.username || 'U';
+    const initials = name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('');
+
+    return initials || 'U';
+  }
+
+
 }
