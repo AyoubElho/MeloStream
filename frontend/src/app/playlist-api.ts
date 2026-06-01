@@ -29,7 +29,7 @@ export class PlaylistApi {
   create(name: string): Observable<Playlist> {
     return this.http.post<Playlist>(this.apiUrl, { name }, { headers: this.authApi.authHeaders() });
   }
-  
+
   rename(playlistId: number, name: string): Observable<Playlist> {
     return this.http.put<Playlist>(
       `${this.apiUrl}/${playlistId}`,

@@ -203,30 +203,44 @@ export class App implements OnInit {
     });
   }
 
-
-  private restoreSession(): void {
-    this.authApi.me().subscribe({
-      next: (user) => {
-        this.user.set(user);
-        if (user) {
-          this.afterAuthentication();
-        }
-      },
-      error: () => {
-        this.authApi.clearToken();
-        this.user.set(null);
-      },
-    });
-  }
-
-  private afterAuthentication(): void {
-    this.syncSettingsForm();
-    this.loadFavorites();
-    this.loadPlaylists();
+  protected searchTracks(): void {
+    this.activeView.set('discover');
     this.loadTracks();
-    this.loadSharedTrackFromUrl();
   }
-protected createPlaylist(): void {
+
+  protected chooseMood(mood: string): void {
+    this.activeView.set('discover');
+    this.selectedMood.set(mood);
+    this.query = '';
+    this.loadTracks();
+  }
+
+  protected openView(view: DashboardView): void {
+    if (view === 'admin' && !this.isAdmin()) {
+      this.activeView.set('discover');
+      return;
+    }
+
+    this.activeView.set(view);
+
+    if (view === 'settings') {
+      this.syncSettingsForm();
+    }
+
+    if (view === 'playlists') {
+      this.loadPlaylists();
+    }
+
+    if (view === 'admin') {
+      this.loadAdminDashboard();
+    }
+  }
+
+  protected refreshAdmin(): void {
+    this.loadAdminDashboard();
+  }
+
+  protected createPlaylist(): void {
     const name = this.newPlaylistName.trim();
     if (!name) {
       this.playlistError.set('Nom de playlist requis.');
@@ -312,107 +326,6 @@ protected createPlaylist(): void {
     });
   }
 
-   private replacePlaylist(playlist: Playlist): void {
-    const playlists = this.playlists();
-    if (playlists.some((item) => item.id === playlist.id)) {
-      this.playlists.set(playlists.map((item) => item.id === playlist.id ? playlist : item));
-      return;
-    }
-    this.playlists.set([playlist, ...playlists]);
-  }
-
-
-   protected searchTracks(): void {
-    this.activeView.set('discover');
-    this.loadTracks();
-  }
-
-  protected chooseMood(mood: string): void {
-    this.activeView.set('discover');
-    this.selectedMood.set(mood);
-    this.query = '';
-    this.loadTracks();
-  }
-
-  private loadTracks(): void {
-    if (!this.user()) {
-      return;
-    }
-
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
-
-    this.musicApi
-      .findTracks({
-        query: this.query,
-        mood: this.selectedMood(),
-        limit: 24,
-      })
-      .pipe(finalize(() => this.isLoading.set(false)))
-      .subscribe({
-        next: (response) => {
-          const sharedSong = this.sharedSongFromUrl();
-          const currentTrack = this.currentTrack();
-          this.tracks.set(
-            sharedSong && currentTrack ? this.withTrackAtFront(response.tracks, currentTrack) : response.tracks,
-          );
-        },
-        error: () => {
-          this.tracks.set([]);
-          this.errorMessage.set('Impossible de charger la musique pour le moment.');
-        },
-      });
-  }
-
-   protected resultTitle(): string {
-    const cleanQuery = this.query.trim();
-    if (cleanQuery) {
-      return `Recherche: ${cleanQuery}`;
-    }
-    return this.moods.find((mood) => mood.value === this.selectedMood())?.label ?? 'Catalogue';
-  }
-protected toggleFavorite(track: Track): void {
-    if (!this.user()) {
-      this.authError.set('Connecte-toi pour sauvegarder des titres.');
-      return;
-    }
-
-    if (this.isFavorite(track)) {
-      this.favoriteApi.remove(track.id).subscribe({
-        next: () => {
-          const nextIds = new Set(this.favoriteIds());
-          nextIds.delete(track.id);
-          this.favoriteIds.set(nextIds);
-          this.savedTracks.set(this.savedTracks().filter((savedTrack) => savedTrack.id !== track.id));
-        },
-      });
-      return;
-    }
-
-    this.favoriteApi.add(track).subscribe({
-      next: () => {
-        this.favoriteIds.set(new Set([...this.favoriteIds(), track.id]));
-        this.savedTracks.set([track, ...this.savedTracks()]);
-      },
-    });
-  }
-  protected isFavorite(track: Track): boolean {
-    return this.favoriteIds().has(track.id);
-  }
-
-  private loadFavorites(): void {
-    this.favoriteApi.list().subscribe({
-      next: (tracks) => {
-        this.savedTracks.set(tracks);
-        this.favoriteIds.set(new Set(tracks.map((track) => track.id)));
-      },
-      error: () => {
-        this.savedTracks.set([]);
-        this.favoriteIds.set(new Set());
-      },
-    });
-  }
-
   protected openPlaylistPicker(track: Track): void {
     this.playlistTarget.set(track);
     this.playlistError.set(null);
@@ -422,7 +335,7 @@ protected toggleFavorite(track: Track): void {
     }
   }
 
-    protected closePlaylistPicker(): void {
+  protected closePlaylistPicker(): void {
     this.playlistTarget.set(null);
   }
 
@@ -505,90 +418,53 @@ protected toggleFavorite(track: Track): void {
     return playlist.tracks.some((item) => this.musicSource(item) === source && item.id === track.id);
   }
 
-   protected playTrack(track: Track): void {
-    this.shouldAutoplay.set(true);
-    this.currentTrack.set(track);
-  }
-
-  protected async shareTrack(track: Track): Promise<void> {
-    this.shareMessage.set(null);
-    this.shareError.set(null);
-
-    const shareUrl = this.shareUrl(track);
-    const title = `${track.title} - ${track.artist}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title,
-          text: `Ecoute ${title} sur MeloStream.`,
-          url: shareUrl,
-        });
-        this.shareMessage.set('Lien de partage pret.');
-        return;
-      }
-
-      await navigator.clipboard.writeText(shareUrl);
-      this.shareMessage.set('Lien de partage copie.');
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
-      }
-      this.shareError.set(`Copie impossible. Lien: ${shareUrl}`);
-    }
-  }
-
-  private shareUrl(track: Track): string {
-    const url = new URL(window.location.href);
-    url.search = '';
-    url.hash = '';
-    url.searchParams.set('song', `${this.musicSource(track)}:${track.id}`);
-    return url.toString();
-  }
-
-  private sharedSongFromUrl(): { source: MusicSource; trackId: string } | null {
-    const token = new URLSearchParams(window.location.search).get('song');
-    if (!token) {
-      return null;
-    }
-
-    const separatorIndex = token.indexOf(':');
-    if (separatorIndex <= 0 || separatorIndex === token.length - 1) {
-      return null;
-    }
-
-    const source = this.normalizeMusicSource(token.slice(0, separatorIndex));
-    const trackId = token.slice(separatorIndex + 1);
-    if (!source) {
-      return null;
-    }
-    return { source, trackId };
-  }
-
-   private loadSharedTrackFromUrl(): void {
-    const sharedSong = this.sharedSongFromUrl();
-    if (!sharedSong) {
+  protected setUserRole(user: AdminUser, role: string): void {
+    const nextRole = this.parseRole(role);
+    if (!nextRole || nextRole === user.role || this.isCurrentUser(user)) {
+      this.adminUsers.set([...this.adminUsers()]);
       return;
     }
 
-    this.activeView.set('discover');
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.adminMessage.set(null);
+    this.adminError.set(null);
+    this.setRoleUpdating(user.id, true);
 
-    this.musicApi
-      .getTrack(sharedSong.source, sharedSong.trackId)
-      .pipe(finalize(() => this.isLoading.set(false)))
-      .subscribe({
-        next: (track) => {
-          this.shouldAutoplay.set(false);
-          this.currentTrack.set(track);
-          this.tracks.set(this.withTrackAtFront(this.tracks(), track));
-          this.shareMessage.set('Titre partage charge.');
-        },
-        error: () => {
-          this.errorMessage.set('Impossible de charger le titre partage.');
-        },
-      });
+    this.adminApi.updateRole(user.id, nextRole).pipe(finalize(() => this.setRoleUpdating(user.id, false))).subscribe({
+      next: (updatedUser) => {
+        this.adminUsers.set(
+          this.adminUsers().map((adminUser) => adminUser.id === updatedUser.id ? updatedUser : adminUser),
+        );
+        this.adminMessage.set(`Role mis a jour pour @${updatedUser.username}.`);
+        this.loadAdminStats();
+      },
+      error: () => {
+        this.adminUsers.set([...this.adminUsers()]);
+        this.adminError.set('Impossible de modifier le role.');
+      },
+    });
+  }
+
+  protected removeAdminUser(user: AdminUser): void {
+    this.adminMessage.set(null);
+    this.adminError.set(null);
+    this.adminApi.deleteUser(user.id).subscribe({
+      next: () => {
+        this.adminUsers.set(this.adminUsers().filter((adminUser) => adminUser.id !== user.id));
+        this.adminMessage.set(`Utilisateur @${user.username} supprime.`);
+        this.loadAdminStats();
+      },
+      error: () => {
+        this.adminError.set('Impossible de supprimer cet utilisateur.');
+      },
+    });
+  }
+
+  protected isCurrentUser(adminUser: AdminUser): boolean {
+    return this.user()?.id === adminUser.id;
+  }
+
+  protected isRoleUpdating(adminUser: AdminUser): boolean {
+    return this.updatingRoleIds().has(adminUser.id);
   }
 
   protected saveSettings(): void {
@@ -621,20 +497,68 @@ protected toggleFavorite(track: Track): void {
         },
       });
   }
- private syncSettingsForm(user = this.user()): void {
-    if (!user) {
-      this.settingsDisplayName = '';
-      this.settingsAvatarUrl = '';
-      this.settingsPassword = '';
-      this.settingsError.set(null);
-      this.settingsMessage.set(null);
-      return;
+
+  protected playTrack(track: Track): void {
+    this.shouldAutoplay.set(true);
+    this.currentTrack.set(track);
+  }
+
+  protected async shareTrack(track: Track): Promise<void> {
+    this.shareMessage.set(null);
+    this.shareError.set(null);
+
+    const shareUrl = this.shareUrl(track);
+    const title = `${track.title} - ${track.artist}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title,
+          text: `Ecoute ${title} sur MeloStream.`,
+          url: shareUrl,
+        });
+        this.shareMessage.set('Lien de partage pret.');
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      this.shareMessage.set('Lien de partage copie.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+      this.shareError.set(`Copie impossible. Lien: ${shareUrl}`);
+    }
+  }
+
+    protected toggleFavorite(track: Track): void {
+      if (!this.user()) {
+        this.authError.set('Connecte-toi pour sauvegarder des titres.');
+        return;
+      }
+
+      if (this.isFavorite(track)) {
+        this.favoriteApi.remove(track.id).subscribe({
+          next: () => {
+            const nextIds = new Set(this.favoriteIds());
+            nextIds.delete(track.id);
+            this.favoriteIds.set(nextIds);
+            this.savedTracks.set(this.savedTracks().filter((savedTrack) => savedTrack.id !== track.id));
+          },
+        });
+        return;
+      }
+
+      this.favoriteApi.add(track).subscribe({
+        next: () => {
+          this.favoriteIds.set(new Set([...this.favoriteIds(), track.id]));
+          this.savedTracks.set([track, ...this.savedTracks()]);
+        },
+      });
     }
 
-    this.settingsDisplayName = user.displayName;
-    this.settingsAvatarUrl = user.avatarUrl ?? '';
-    this.settingsPassword = '';
-    this.settingsError.set(null);
+  protected isFavorite(track: Track): boolean {
+    return this.favoriteIds().has(track.id);
   }
 
   protected profileImage(): string | null {
@@ -653,6 +577,212 @@ protected toggleFavorite(track: Track): void {
 
     return initials || 'U';
   }
+
+  protected resultTitle(): string {
+    const cleanQuery = this.query.trim();
+    if (cleanQuery) {
+      return `Recherche: ${cleanQuery}`;
+    }
+    return this.moods.find((mood) => mood.value === this.selectedMood())?.label ?? 'Catalogue';
+  }
+
+  protected formatDuration(duration: number | null | undefined): string {
+    if (!duration) {
+      return '0:00';
+    }
+
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  private restoreSession(): void {
+    this.authApi.me().subscribe({
+      next: (user) => {
+        this.user.set(user);
+        if (user) {
+          this.afterAuthentication();
+        }
+      },
+      error: () => {
+        this.authApi.clearToken();
+        this.user.set(null);
+      },
+    });
+  }
+
+  private afterAuthentication(): void {
+    this.syncSettingsForm();
+    this.loadFavorites();
+    this.loadPlaylists();
+    this.loadTracks();
+    this.loadSharedTrackFromUrl();
+  }
+
+  private syncSettingsForm(user = this.user()): void {
+    if (!user) {
+      this.settingsDisplayName = '';
+      this.settingsAvatarUrl = '';
+      this.settingsPassword = '';
+      this.settingsError.set(null);
+      this.settingsMessage.set(null);
+      return;
+    }
+
+    this.settingsDisplayName = user.displayName;
+    this.settingsAvatarUrl = user.avatarUrl ?? '';
+    this.settingsPassword = '';
+    this.settingsError.set(null);
+  }
+
+  private loadTracks(): void {
+    if (!this.user()) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.musicApi
+      .findTracks({
+        query: this.query,
+        mood: this.selectedMood(),
+        limit: 24,
+      })
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          const sharedSong = this.sharedSongFromUrl();
+          const currentTrack = this.currentTrack();
+          this.tracks.set(
+            sharedSong && currentTrack ? this.withTrackAtFront(response.tracks, currentTrack) : response.tracks,
+          );
+        },
+        error: () => {
+          this.tracks.set([]);
+          this.errorMessage.set('Impossible de charger la musique pour le moment.');
+        },
+      });
+  }
+
+  private loadFavorites(): void {
+    this.favoriteApi.list().subscribe({
+      next: (tracks) => {
+        this.savedTracks.set(tracks);
+        this.favoriteIds.set(new Set(tracks.map((track) => track.id)));
+      },
+      error: () => {
+        this.savedTracks.set([]);
+        this.favoriteIds.set(new Set());
+      },
+    });
+  }
+
+  private loadPlaylists(): void {
+    this.playlistApi.list().subscribe({
+      next: (playlists) => {
+        this.playlists.set(playlists);
+        if (!this.selectedPlaylistId() && playlists.length > 0) {
+          this.selectedPlaylistId.set(playlists[0].id);
+        }
+      },
+      error: () => {
+        this.playlists.set([]);
+        this.selectedPlaylistId.set(null);
+      },
+    });
+  }
+
+  private replacePlaylist(playlist: Playlist): void {
+    const playlists = this.playlists();
+    if (playlists.some((item) => item.id === playlist.id)) {
+      this.playlists.set(playlists.map((item) => item.id === playlist.id ? playlist : item));
+      return;
+    }
+    this.playlists.set([playlist, ...playlists]);
+  }
+
+  private loadSharedTrackFromUrl(): void {
+    const sharedSong = this.sharedSongFromUrl();
+    if (!sharedSong) {
+      return;
+    }
+
+    this.activeView.set('discover');
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.musicApi
+      .getTrack(sharedSong.source, sharedSong.trackId)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (track) => {
+          this.shouldAutoplay.set(false);
+          this.currentTrack.set(track);
+          this.tracks.set(this.withTrackAtFront(this.tracks(), track));
+          this.shareMessage.set('Titre partage charge.');
+        },
+        error: () => {
+          this.errorMessage.set('Impossible de charger le titre partage.');
+        },
+      });
+  }
+
+  private sharedSongFromUrl(): { source: MusicSource; trackId: string } | null {
+    const token = new URLSearchParams(window.location.search).get('song');
+    if (!token) {
+      return null;
+    }
+
+    const separatorIndex = token.indexOf(':');
+    if (separatorIndex <= 0 || separatorIndex === token.length - 1) {
+      return null;
+    }
+
+    const source = this.normalizeMusicSource(token.slice(0, separatorIndex));
+    const trackId = token.slice(separatorIndex + 1);
+    if (!source) {
+      return null;
+    }
+    return { source, trackId };
+  }
+
+  private shareUrl(track: Track): string {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    url.searchParams.set('song', `${this.musicSource(track)}:${track.id}`);
+    return url.toString();
+  }
+
+  private withTrackAtFront(tracks: Track[], track: Track): Track[] {
+    const source = this.musicSource(track);
+    return [track, ...tracks.filter((item) => this.musicSource(item) !== source || item.id !== track.id)];
+  }
+
+  private musicSource(track: Track): MusicSource {
+    if (track.source === 'deezer' || track.source === 'jamendo') {
+      return track.source;
+    }
+
+    const providerUrl = track.shareUrl?.toLowerCase() ?? '';
+    if (providerUrl.includes('jamendo')) {
+      return 'jamendo';
+    }
+    return 'deezer';
+  }
+
+  private normalizeMusicSource(source: string): MusicSource | null {
+    if (source === 'deezer' || source === 'jamendo') {
+      return source;
+    }
+
+    if (source === 'undefined') {
+      return 'deezer';
+    }
+    return null;
+  }
+
   private loadAdminDashboard(): void {
     this.isAdminLoading.set(true);
     this.adminError.set(null);
@@ -690,51 +820,4 @@ protected toggleFavorite(track: Track): void {
     }
     this.updatingRoleIds.set(nextIds);
   }
-
-  protected refreshAdmin(): void {
-    this.loadAdminDashboard();
-  }
-
-
-   protected setUserRole(user: AdminUser, role: string): void {
-    const nextRole = this.parseRole(role);
-    if (!nextRole || nextRole === user.role || this.isCurrentUser(user)) {
-      this.adminUsers.set([...this.adminUsers()]);
-      return;
-    }
-
-    this.adminMessage.set(null);
-    this.adminError.set(null);
-    this.setRoleUpdating(user.id, true);
-
-    this.adminApi.updateRole(user.id, nextRole).pipe(finalize(() => this.setRoleUpdating(user.id, false))).subscribe({
-      next: (updatedUser) => {
-        this.adminUsers.set(
-          this.adminUsers().map((adminUser) => adminUser.id === updatedUser.id ? updatedUser : adminUser),
-        );
-        this.adminMessage.set(`Role mis a jour pour @${updatedUser.username}.`);
-        this.loadAdminStats();
-      },
-      error: () => {
-        this.adminUsers.set([...this.adminUsers()]);
-        this.adminError.set('Impossible de modifier le role.');
-      },
-    });
-  }
-
-    protected removeAdminUser(user: AdminUser): void {
-    this.adminMessage.set(null);
-    this.adminError.set(null);
-    this.adminApi.deleteUser(user.id).subscribe({
-      next: () => {
-        this.adminUsers.set(this.adminUsers().filter((adminUser) => adminUser.id !== user.id));
-        this.adminMessage.set(`Utilisateur @${user.username} supprime.`);
-        this.loadAdminStats();
-      },
-      error: () => {
-        this.adminError.set('Impossible de supprimer cet utilisateur.');
-      },
-    });
-  }
-  
 }
