@@ -226,5 +226,99 @@ export class App implements OnInit {
     this.loadTracks();
     this.loadSharedTrackFromUrl();
   }
+protected createPlaylist(): void {
+    const name = this.newPlaylistName.trim();
+    if (!name) {
+      this.playlistError.set('Nom de playlist requis.');
+      this.playlistMessage.set(null);
+      return;
+    }
+
+    this.isPlaylistSaving.set(true);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+
+    this.playlistApi.create(name).pipe(finalize(() => this.isPlaylistSaving.set(false))).subscribe({
+      next: (playlist) => {
+        this.playlists.set([playlist, ...this.playlists()]);
+        this.selectedPlaylistId.set(playlist.id);
+        this.newPlaylistName = '';
+        this.playlistMessage.set(`Playlist "${playlist.name}" creee.`);
+      },
+      error: () => {
+        this.playlistError.set('Impossible de creer cette playlist.');
+      },
+    });
+  }
+
+  protected selectPlaylist(playlist: Playlist): void {
+    this.selectedPlaylistId.set(playlist.id);
+    this.editingPlaylistId.set(null);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+  }
+
+  protected beginRenamePlaylist(playlist: Playlist): void {
+    this.editingPlaylistId.set(playlist.id);
+    this.renamePlaylistName = playlist.name;
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+  }
+
+  protected cancelRenamePlaylist(): void {
+    this.editingPlaylistId.set(null);
+    this.renamePlaylistName = '';
+  }
+
+  protected savePlaylistName(playlist: Playlist): void {
+    const name = this.renamePlaylistName.trim();
+    if (!name) {
+      this.playlistError.set('Nom de playlist requis.');
+      return;
+    }
+
+    this.isPlaylistSaving.set(true);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+
+    this.playlistApi.rename(playlist.id, name).pipe(finalize(() => this.isPlaylistSaving.set(false))).subscribe({
+      next: (updatedPlaylist) => {
+        this.replacePlaylist(updatedPlaylist);
+        this.editingPlaylistId.set(null);
+        this.renamePlaylistName = '';
+        this.playlistMessage.set('Playlist renommee.');
+      },
+      error: () => {
+        this.playlistError.set('Impossible de renommer cette playlist.');
+      },
+    });
+  }
+
+  protected deletePlaylist(playlist: Playlist): void {
+    this.isPlaylistSaving.set(true);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+
+    this.playlistApi.delete(playlist.id).pipe(finalize(() => this.isPlaylistSaving.set(false))).subscribe({
+      next: () => {
+        const nextPlaylists = this.playlists().filter((item) => item.id !== playlist.id);
+        this.playlists.set(nextPlaylists);
+        this.selectedPlaylistId.set(nextPlaylists[0]?.id ?? null);
+        this.playlistMessage.set('Playlist supprimee.');
+      },
+      error: () => {
+        this.playlistError.set('Impossible de supprimer cette playlist.');
+      },
+    });
+  }
+
+   private replacePlaylist(playlist: Playlist): void {
+    const playlists = this.playlists();
+    if (playlists.some((item) => item.id === playlist.id)) {
+      this.playlists.set(playlists.map((item) => item.id === playlist.id ? playlist : item));
+      return;
+    }
+    this.playlists.set([playlist, ...playlists]);
+  }
 
 }
