@@ -412,4 +412,97 @@ protected toggleFavorite(track: Track): void {
       },
     });
   }
+
+  protected openPlaylistPicker(track: Track): void {
+    this.playlistTarget.set(track);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+    if (this.playlists().length === 0) {
+      this.loadPlaylists();
+    }
+  }
+
+    protected closePlaylistPicker(): void {
+    this.playlistTarget.set(null);
+  }
+
+  protected createPlaylistForTrack(track: Track): void {
+    const name = this.newPlaylistName.trim();
+    if (!name) {
+      this.playlistError.set('Nom de playlist requis.');
+      return;
+    }
+
+    this.isPlaylistSaving.set(true);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+
+    this.playlistApi.create(name).subscribe({
+      next: (playlist) => {
+        this.playlists.set([playlist, ...this.playlists()]);
+        this.selectedPlaylistId.set(playlist.id);
+        this.newPlaylistName = '';
+        this.addTrackToPlaylist(track, playlist, true);
+      },
+      error: () => {
+        this.isPlaylistSaving.set(false);
+        this.playlistError.set('Impossible de creer cette playlist.');
+      },
+    });
+  }
+
+  protected addTrackToPlaylist(track: Track, playlist: Playlist, keepSaving = false): void {
+    this.isPlaylistSaving.set(true);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+
+    this.playlistApi.addTrack(playlist.id, track)
+      .pipe(finalize(() => {
+        if (!keepSaving) {
+          this.isPlaylistSaving.set(false);
+        }
+      }))
+      .subscribe({
+        next: (updatedPlaylist) => {
+          this.replacePlaylist(updatedPlaylist);
+          this.selectedPlaylistId.set(updatedPlaylist.id);
+          this.playlistTarget.set(null);
+          this.activeView.set('playlists');
+          this.playlistMessage.set(`"${track.title}" ajoute a "${updatedPlaylist.name}".`);
+          if (keepSaving) {
+            this.isPlaylistSaving.set(false);
+          }
+        },
+        error: () => {
+          this.playlistError.set("Impossible d'ajouter ce titre a la playlist.");
+          if (keepSaving) {
+            this.isPlaylistSaving.set(false);
+          }
+        },
+      });
+  }
+
+  protected removeTrackFromPlaylist(playlist: Playlist, track: Track): void {
+    this.isPlaylistSaving.set(true);
+    this.playlistError.set(null);
+    this.playlistMessage.set(null);
+
+    this.playlistApi.removeTrack(playlist.id, this.musicSource(track), track.id)
+      .pipe(finalize(() => this.isPlaylistSaving.set(false)))
+      .subscribe({
+        next: (updatedPlaylist) => {
+          this.replacePlaylist(updatedPlaylist);
+          this.playlistMessage.set('Titre retire de la playlist.');
+        },
+        error: () => {
+          this.playlistError.set('Impossible de retirer ce titre.');
+        },
+      });
+  }
+
+  protected isTrackInPlaylist(track: Track, playlist: Playlist): boolean {
+    const source = this.musicSource(track);
+    return playlist.tracks.some((item) => this.musicSource(item) === source && item.id === track.id);
+  }
+
 }
