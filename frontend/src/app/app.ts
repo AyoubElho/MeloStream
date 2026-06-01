@@ -321,4 +321,55 @@ protected createPlaylist(): void {
     this.playlists.set([playlist, ...playlists]);
   }
 
+
+   protected searchTracks(): void {
+    this.activeView.set('discover');
+    this.loadTracks();
+  }
+
+  protected chooseMood(mood: string): void {
+    this.activeView.set('discover');
+    this.selectedMood.set(mood);
+    this.query = '';
+    this.loadTracks();
+  }
+
+  private loadTracks(): void {
+    if (!this.user()) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.musicApi
+      .findTracks({
+        query: this.query,
+        mood: this.selectedMood(),
+        limit: 24,
+      })
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          const sharedSong = this.sharedSongFromUrl();
+          const currentTrack = this.currentTrack();
+          this.tracks.set(
+            sharedSong && currentTrack ? this.withTrackAtFront(response.tracks, currentTrack) : response.tracks,
+          );
+        },
+        error: () => {
+          this.tracks.set([]);
+          this.errorMessage.set('Impossible de charger la musique pour le moment.');
+        },
+      });
+  }
+
+   protected resultTitle(): string {
+    const cleanQuery = this.query.trim();
+    if (cleanQuery) {
+      return `Recherche: ${cleanQuery}`;
+    }
+    return this.moods.find((mood) => mood.value === this.selectedMood())?.label ?? 'Catalogue';
+  }
+
 }
