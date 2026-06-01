@@ -677,4 +677,73 @@
       }
     </section>
   </main>
+
+  @if (playlistTarget(); as target) {
+    <section class="playlist-modal-backdrop" (click)="closePlaylistPicker()">
+      <aside class="playlist-modal" (click)="$event.stopPropagation()" aria-label="Ajouter a une playlist">
+        <header>
+          <div>
+            <span class="eyebrow">Playlist</span>
+            <h2>Ajouter ce titre</h2>
+            <p>{{ target.title }} - {{ target.artist }}</p>
+          </div>
+          <button type="button" class="icon-button" (click)="closePlaylistPicker()" aria-label="Fermer">
+            <svg lucideX class="icon" size="18"></svg>
+          </button>
+        </header>
+
+        @if (playlistError()) {
+          <div class="form-error">{{ playlistError() }}</div>
+        }
+
+        <form class="playlist-form" (ngSubmit)="createPlaylistForTrack(target)">
+          <input
+            name="pickerPlaylistName"
+            [(ngModel)]="newPlaylistName"
+            placeholder="Nouvelle playlist"
+            maxlength="120"
+            required
+          />
+          <button type="submit" [disabled]="isPlaylistSaving()">
+            <svg lucidePlus class="icon" size="17"></svg>
+            Creer et ajouter
+          </button>
+        </form>
+
+        @if (playlists().length > 0) {
+          <div class="playlist-picker-list">
+            @for (playlist of playlists(); track playlist.id) {
+              <button
+                type="button"
+                (click)="addTrackToPlaylist(target, playlist)"
+                [disabled]="isPlaylistSaving() || isTrackInPlaylist(target, playlist)"
+              >
+                <svg lucideListMusic class="icon" size="17"></svg>
+                <span>
+                  <strong>{{ playlist.name }}</strong>
+                  <small>
+                    {{ isTrackInPlaylist(target, playlist) ? 'Deja ajoute' : playlist.trackCount + ' titres' }}
+                  </small>
+                </span>
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="state-panel compact">Aucune playlist disponible.</div>
+        }
+      </aside>
+    </section>
+  }
+
+  @if (currentTrack(); as track) {
+    <aside class="player" aria-label="Lecteur audio">
+      <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+      <div class="now-playing">
+        <svg lucideHeadphones class="player-icon" size="18"></svg>
+        <strong>{{ track.title }}</strong>
+        <span>{{ track.artist }}</span>
+      </div>
+      <audio controls [autoplay]="shouldAutoplay()" [src]="track.audioUrl"></audio>
+    </aside>
+  }
 }
