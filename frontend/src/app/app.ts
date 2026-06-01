@@ -505,4 +505,90 @@ protected toggleFavorite(track: Track): void {
     return playlist.tracks.some((item) => this.musicSource(item) === source && item.id === track.id);
   }
 
+   protected playTrack(track: Track): void {
+    this.shouldAutoplay.set(true);
+    this.currentTrack.set(track);
+  }
+
+  protected async shareTrack(track: Track): Promise<void> {
+    this.shareMessage.set(null);
+    this.shareError.set(null);
+
+    const shareUrl = this.shareUrl(track);
+    const title = `${track.title} - ${track.artist}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title,
+          text: `Ecoute ${title} sur MeloStream.`,
+          url: shareUrl,
+        });
+        this.shareMessage.set('Lien de partage pret.');
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      this.shareMessage.set('Lien de partage copie.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+      this.shareError.set(`Copie impossible. Lien: ${shareUrl}`);
+    }
+  }
+
+  private shareUrl(track: Track): string {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    url.searchParams.set('song', `${this.musicSource(track)}:${track.id}`);
+    return url.toString();
+  }
+
+  private sharedSongFromUrl(): { source: MusicSource; trackId: string } | null {
+    const token = new URLSearchParams(window.location.search).get('song');
+    if (!token) {
+      return null;
+    }
+
+    const separatorIndex = token.indexOf(':');
+    if (separatorIndex <= 0 || separatorIndex === token.length - 1) {
+      return null;
+    }
+
+    const source = this.normalizeMusicSource(token.slice(0, separatorIndex));
+    const trackId = token.slice(separatorIndex + 1);
+    if (!source) {
+      return null;
+    }
+    return { source, trackId };
+  }
+
+   private loadSharedTrackFromUrl(): void {
+    const sharedSong = this.sharedSongFromUrl();
+    if (!sharedSong) {
+      return;
+    }
+
+    this.activeView.set('discover');
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.musicApi
+      .getTrack(sharedSong.source, sharedSong.trackId)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (track) => {
+          this.shouldAutoplay.set(false);
+          this.currentTrack.set(track);
+          this.tracks.set(this.withTrackAtFront(this.tracks(), track));
+          this.shareMessage.set('Titre partage charge.');
+        },
+        error: () => {
+          this.errorMessage.set('Impossible de charger le titre partage.');
+        },
+      });
+  }
+
 }
