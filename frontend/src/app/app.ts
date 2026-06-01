@@ -371,5 +371,45 @@ protected createPlaylist(): void {
     }
     return this.moods.find((mood) => mood.value === this.selectedMood())?.label ?? 'Catalogue';
   }
+protected toggleFavorite(track: Track): void {
+    if (!this.user()) {
+      this.authError.set('Connecte-toi pour sauvegarder des titres.');
+      return;
+    }
 
+    if (this.isFavorite(track)) {
+      this.favoriteApi.remove(track.id).subscribe({
+        next: () => {
+          const nextIds = new Set(this.favoriteIds());
+          nextIds.delete(track.id);
+          this.favoriteIds.set(nextIds);
+          this.savedTracks.set(this.savedTracks().filter((savedTrack) => savedTrack.id !== track.id));
+        },
+      });
+      return;
+    }
+
+    this.favoriteApi.add(track).subscribe({
+      next: () => {
+        this.favoriteIds.set(new Set([...this.favoriteIds(), track.id]));
+        this.savedTracks.set([track, ...this.savedTracks()]);
+      },
+    });
+  }
+  protected isFavorite(track: Track): boolean {
+    return this.favoriteIds().has(track.id);
+  }
+
+  private loadFavorites(): void {
+    this.favoriteApi.list().subscribe({
+      next: (tracks) => {
+        this.savedTracks.set(tracks);
+        this.favoriteIds.set(new Set(tracks.map((track) => track.id)));
+      },
+      error: () => {
+        this.savedTracks.set([]);
+        this.favoriteIds.set(new Set());
+      },
+    });
+  }
 }
