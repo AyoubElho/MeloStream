@@ -137,7 +137,7 @@
     \end{tabular}
 
     \vfill
-    {\large \textbf{Année universitaire :} 2025--2027\par}
+    {\large \textbf{Année universitaire :} 2025--2026\par}
 
 \end{titlepage}
 
@@ -333,7 +333,8 @@ API musicale externe & Fournit les titres, artistes, albums, images et audios. \
 \begin{tikzpicture}[
     actor/.style={draw, rounded corners, fill=secondary!10, minimum width=3.2cm, minimum height=0.8cm},
     usecase/.style={draw, ellipse, fill=primary!8, minimum width=3.8cm, minimum height=0.9cm, align=center},
-    link/.style={-Latex, thick, color=muted}
+    link/.style={-Latex, thick, color=muted},
+    generalization/.style={-{Triangle[open,length=3mm,width=3mm]}, thick, color=muted}
 ]
     \node[actor] (visitor) {Visiteur};
     \node[actor, below=1.1cm of visitor] (user) {Utilisateur};
@@ -348,6 +349,7 @@ API musicale externe & Fournit les titres, artistes, albums, images et audios. \
     \node[usecase, below=0.6cm of playlist] (share) {Partager titre};
     \node[usecase, below=0.6cm of share] (manage) {Gérer utilisateurs};
 
+    \draw[generalization] (admin.north) -- (user.south);
     \draw[link] (visitor) -- (register);
     \draw[link] (visitor) -- (login);
     \draw[link] (user) -- (search);
@@ -360,17 +362,20 @@ API musicale externe & Fournit les titres, artistes, albums, images et audios. \
 \caption{Diagramme de cas d'utilisation simplifié}
 \end{figure}
 
-\textbf{Explication du diagramme :} ce diagramme présente les principales
-interactions entre les acteurs et l'application. Le visiteur dispose seulement
-des actions d'inscription et de connexion. Après authentification, il devient
-utilisateur et peut accéder aux fonctionnalités musicales : recherche, écoute,
-favoris, playlists et partage. L'administrateur hérite des usages généraux de
-l'application, mais possède en plus l'accès à la gestion des utilisateurs.
-
-Cette représentation permet de visualiser rapidement le périmètre fonctionnel
-du projet et de distinguer les fonctionnalités publiques, les fonctionnalités
-réservées aux utilisateurs connectés et les fonctionnalités réservées aux
-administrateurs.
+\textbf{Explication du diagramme :}
+\begin{itemize}
+    \item Le diagramme présente les principales interactions entre les acteurs
+    et l'application.
+    \item Le visiteur peut seulement créer un compte ou se connecter.
+    \item Après authentification, l'utilisateur accède aux fonctionnalités
+    musicales : recherche, écoute, favoris, playlists et partage.
+    \item La flèche de généralisation indique que l'administrateur est un
+    utilisateur spécialisé.
+    \item L'administrateur conserve les cas d'utilisation d'un utilisateur
+    connecté et ajoute la gestion des utilisateurs.
+    \item Cette représentation distingue les fonctionnalités publiques, les
+    fonctionnalités privées et les fonctionnalités d'administration.
+\end{itemize}
 
 \section{Diagramme de classes}
 
@@ -378,7 +383,8 @@ administrateurs.
 \centering
 \begin{tikzpicture}[
     class/.style={draw, rounded corners, fill=light, minimum width=4.2cm, align=left},
-    relation/.style={-Latex, thick, color=muted}
+    relation/.style={-Latex, thick, color=muted},
+    generalization/.style={-{Triangle[open,length=3mm,width=3mm]}, thick, color=muted}
 ]
     \node[class] (user) {
         \textbf{UserAccount}\\
@@ -389,6 +395,22 @@ administrateurs.
         displayName\\
         passwordHash\\
         role
+    };
+
+    \node[class, above left=1.2cm and -0.2cm of user, minimum width=3.6cm] (standardUser) {
+        \textbf{Utilisateur}\\
+        \rule{3.2cm}{0.2pt}\\
+        role = USER\\
+        favoris\\
+        playlists
+    };
+
+    \node[class, above right=1.2cm and -0.2cm of user, minimum width=3.6cm] (adminUser) {
+        \textbf{Administrateur}\\
+        \rule{3.2cm}{0.2pt}\\
+        role = ADMIN\\
+        statistiques\\
+        gestion utilisateurs
     };
 
     \node[class, right=2cm of user] (token) {
@@ -423,6 +445,8 @@ administrateurs.
         tags
     };
 
+    \draw[generalization] (standardUser.south) -- (user.north west);
+    \draw[generalization] (adminUser.south) -- (user.north east);
     \draw[relation] (user) -- node[above]{1..*} (token);
     \draw[relation] (user) -- node[left]{1..*} (favorite);
     \draw[relation, dashed] (favorite) -- node[above]{référence} (track);
@@ -430,24 +454,24 @@ administrateurs.
 \caption{Diagramme de classes principal}
 \end{figure}
 
-\textbf{Explication du diagramme :} le diagramme de classes décrit les entités
-centrales utilisées par le backend. La classe \code{UserAccount} représente un
-compte utilisateur et contient les informations nécessaires à l'identification,
-au profil et au rôle. La classe \code{AuthToken} est liée à un utilisateur et
-sert à conserver les jetons de session utilisés pour authentifier les requêtes.
-
-La classe \code{FavoriteTrack} permet de sauvegarder un titre dans la
-bibliothèque personnelle d'un utilisateur. Elle garde les informations
-essentielles du morceau afin de pouvoir l'afficher rapidement dans les favoris.
-La classe \code{TrackDto} représente un titre normalisé venant d'une API
-musicale externe. Le lien en pointillés montre que le favori référence un titre
-externe, mais que ce titre n'est pas une entité persistée de la même manière
-qu'un utilisateur ou un jeton.
-
-Le modèle est complété par les classes \code{Playlist} et
-\code{PlaylistTrack}. Une playlist appartient à un utilisateur, et une playlist
-contient plusieurs titres. Cette relation permet d'organiser les chansons au
-delà de la simple liste de favoris.
+\textbf{Explication du diagramme :}
+\begin{itemize}
+    \item Le diagramme décrit les entités principales utilisées par le backend.
+    \item \code{UserAccount} représente le compte utilisateur avec son
+    identifiant, son profil, son mot de passe hashé et son rôle.
+    \item \code{AuthToken} conserve les jetons de session liés à un utilisateur
+    pour authentifier les requêtes privées.
+    \item La généralisation montre que \code{Utilisateur} et
+    \code{Administrateur} sont deux spécialisations de \code{UserAccount}.
+    \item Dans le code Java, cette spécialisation est portée par le champ
+    \code{role} : \code{USER} pour les fonctions musicales et \code{ADMIN} pour
+    l'administration.
+    \item \code{FavoriteTrack} sauvegarde les titres favoris d'un utilisateur,
+    tandis que \code{TrackDto} représente un titre normalisé venant d'une API
+    musicale externe.
+    \item Les classes \code{Playlist} et \code{PlaylistTrack} complètent le
+    modèle pour organiser les chansons en listes personnalisées.
+\end{itemize}
 
 \section{Organisation des données}
 
@@ -508,24 +532,23 @@ directement au même titre.
 \caption{Architecture technique de MeloStream}
 \end{figure}
 
-\textbf{Explication du diagramme :} ce diagramme montre le chemin suivi par les
-données entre l'utilisateur et les différentes couches du système. Le navigateur
-communique avec le frontend Angular, qui se charge de l'interface, des
-formulaires et des interactions utilisateur. En développement local, Angular
-redirige les requêtes commençant par \path{/api} vers le backend Spring Boot
-grâce au proxy.
-
-Le backend joue le rôle de point central. Il applique les règles métier,
-contrôle la sécurité, interroge MySQL pour les données internes et contacte les
-API musicales pour récupérer les titres. Cette organisation évite d'exposer
-directement la base de données ou les clés éventuelles des services externes
-côté client.
-
-Les échanges entre les couches suivent un format JSON. Les controllers REST
-reçoivent les requêtes, les services appliquent les règles métier, les
-repositories accèdent aux données persistées et les mappers construisent les
-DTO retournés au frontend. Cette séparation rend le code plus lisible et limite
-les dépendances entre les couches.
+\textbf{Explication du diagramme :}
+\begin{itemize}
+    \item Le diagramme montre le chemin suivi par les données entre
+    l'utilisateur et les couches techniques du système.
+    \item Le navigateur communique avec le frontend Angular, responsable de
+    l'interface, des formulaires et des interactions utilisateur.
+    \item En développement local, Angular redirige les requêtes \path{/api}
+    vers le backend Spring Boot grâce au proxy.
+    \item Le backend applique les règles métier, contrôle la sécurité et sert
+    de point central entre le frontend, MySQL et les API musicales.
+    \item MySQL stocke les données internes : utilisateurs, jetons, favoris et
+    playlists.
+    \item Les API Deezer et Jamendo fournissent les données musicales externes,
+    comme les titres, artistes, pochettes et extraits audio.
+    \item Les échanges entre les couches utilisent le format JSON, avec des DTO
+    pour fournir au frontend des données normalisées.
+\end{itemize}
 
 \section{Technologies utilisées}
 
@@ -788,11 +811,19 @@ et documentation Swagger.
     \caption{Page d'authentification}
 \end{figure}
 
+\textbf{Explication de la figure :} cette page permet à l'utilisateur de se
+connecter à son compte. Elle constitue le point d'entrée vers les
+fonctionnalités privées de l'application.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{08-inscription-utilisateur.png}
     \caption{Page d'inscription utilisateur}
 \end{figure}
+
+\textbf{Explication de la figure :} cette interface permet de créer un nouveau
+compte utilisateur. Les informations saisies sont envoyées au backend pour
+enregistrer le profil et générer une première session.
 
 \begin{figure}[H]
     \centering
@@ -800,11 +831,19 @@ et documentation Swagger.
     \caption{Accueil utilisateur et catalogue musical}
 \end{figure}
 
+\textbf{Explication de la figure :} l'écran d'accueil présente le catalogue
+musical après connexion. L'utilisateur peut parcourir les titres proposés,
+lancer une écoute ou accéder aux actions rapides.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{07-recherche-chanson.png}
     \caption{Résultats d'une recherche de chanson}
 \end{figure}
+
+\textbf{Explication de la figure :} cette capture montre le résultat d'une
+recherche musicale. Les titres retournés par l'API sont affichés avec les
+informations nécessaires : artiste, album, image et actions disponibles.
 
 \begin{figure}[H]
     \centering
@@ -812,11 +851,19 @@ et documentation Swagger.
     \caption{Message affiché après le partage d'un titre}
 \end{figure}
 
+\textbf{Explication de la figure :} le message confirme que le lien de partage
+du titre a été généré. Ce lien peut être transmis à un autre utilisateur pour
+ouvrir directement le même morceau.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{04-favoris.png}
     \caption{Bibliothèque des titres favoris}
 \end{figure}
+
+\textbf{Explication de la figure :} cette page regroupe les titres sauvegardés
+par l'utilisateur. Elle permet de retrouver rapidement ses morceaux préférés et
+de les gérer depuis un espace personnel.
 
 \begin{figure}[H]
     \centering
@@ -824,11 +871,19 @@ et documentation Swagger.
     \caption{Gestion des playlists utilisateur}
 \end{figure}
 
+\textbf{Explication de la figure :} l'écran des playlists permet d'organiser
+les chansons en listes personnalisées. L'utilisateur peut créer une playlist,
+y ajouter des titres ou retirer ceux qui ne sont plus souhaités.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{06-parametres.png}
     \caption{Page des paramètres du profil}
 \end{figure}
+
+\textbf{Explication de la figure :} cette page permet de modifier les
+informations du profil, comme le nom d'affichage, l'avatar ou le mot de passe.
+Elle donne à l'utilisateur le contrôle sur ses données personnelles.
 
 \begin{figure}[H]
     \centering
@@ -836,11 +891,19 @@ et documentation Swagger.
     \caption{Interface d'administration}
 \end{figure}
 
+\textbf{Explication de la figure :} cette interface est réservée aux comptes
+administrateurs. Elle permet de consulter les statistiques et de gérer les
+utilisateurs de l'application.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{10-swagger-openapi.png}
     \caption{Documentation Swagger OpenAPI de l'API REST}
 \end{figure}
+
+\textbf{Explication de la figure :} Swagger UI présente automatiquement la
+documentation des endpoints REST. Cette page facilite le test des routes et la
+compréhension des données échangées entre frontend et backend.
 
 \section{Comptes de démonstration}
 
