@@ -190,6 +190,7 @@ MySQL            Deezer / Jamendo
 | Frontend | Angular 21, TypeScript 5.9, RxJS, CSS responsive |
 | UI | Icones `@lucide/angular`, palette simple bleu/vert/neutre |
 | Base de donnees | MySQL, phpMyAdmin |
+| Documentation API | Springdoc OpenAPI 3.0.3, Swagger UI |
 | Tests | Spring Boot Test, H2 pour tests backend, Angular/Vitest cote frontend |
 | API musicale | Deezer public API, Jamendo API optionnelle |
 
@@ -236,6 +237,8 @@ project web/
   publics.
 - Les autres endpoints `/api/**` necessitent un jeton d'authentification.
 - Les endpoints `/api/admin/**` necessitent le role `ADMIN`.
+- Les pages Swagger `/swagger-ui.html`, `/swagger-ui/**` et `/v3/api-docs/**`
+  sont publiques pour consulter la documentation de l'API.
 - L'application utilise une configuration stateless.
 - Les mots de passe sont hashes avant stockage.
 - Les origines CORS autorisees sont `http://localhost:4200` et
@@ -266,6 +269,19 @@ project web/
 | `PUT` | `/api/admin/users/{userId}/role` | Modifier un role. |
 | `DELETE` | `/api/admin/users/{userId}` | Supprimer un utilisateur. |
 
+### 4.6 Documentation Swagger/OpenAPI
+
+Le backend integre Springdoc OpenAPI pour generer automatiquement la
+documentation REST a partir des controllers Spring Boot.
+
+| Page | URL locale |
+| --- | --- |
+| Interface Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| Specification OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
+
+Swagger UI permet de consulter les endpoints, les schemas DTO et d'utiliser le
+bouton `Authorize` avec le jeton d'authentification retourne par la connexion.
+
 ## 5. Realisation
 
 ### 5.1 Fonctionnalites developpees
@@ -282,28 +298,66 @@ project web/
 - Chargement d'un titre partage depuis l'URL.
 - Message de confirmation apres partage.
 - Interface admin pour les comptes ayant le role `ADMIN`.
+- Documentation interactive de l'API avec Swagger UI.
 - Nouvelle interface avec couleurs simples et icones.
 
 ### 5.2 Captures d'ecran
 
 Les captures sont stockees dans `rapport/images/` et utilisees dans le rapport
-LaTeX.
+LaTeX. La grille suivante presente tous les ecrans principaux du projet.
 
-| Ecran | Fichier |
-| --- | --- |
-| Connexion | `rapport/images/01-authentification.png` |
-| Inscription | `rapport/images/08-inscription-utilisateur.png` |
-| Accueil et catalogue | `rapport/images/02-accueil-catalogue.png` |
-| Recherche | `rapport/images/07-recherche-chanson.png` |
-| Partage | `rapport/images/03-partage-titre.png` |
-| Favoris | `rapport/images/04-favoris.png` |
-| Playlists | `rapport/images/09-playlists.png` |
-| Parametres | `rapport/images/06-parametres.png` |
-| Admin | `rapport/images/05-administration.png` |
-
-Capture de la page Playlists:
-
-![Gestion des playlists](rapport/images/09-playlists.png)
+<table>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/01-authentification.png" alt="Page d'authentification" width="100%">
+      <br><strong>Authentification</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/08-inscription-utilisateur.png" alt="Page d'inscription utilisateur" width="100%">
+      <br><strong>Inscription utilisateur</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/02-accueil-catalogue.png" alt="Accueil utilisateur et catalogue musical" width="100%">
+      <br><strong>Accueil et catalogue</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/07-recherche-chanson.png" alt="Resultats de recherche de chanson" width="100%">
+      <br><strong>Recherche musicale</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/03-partage-titre.png" alt="Message affiche apres le partage d'un titre" width="100%">
+      <br><strong>Partage de titre</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/04-favoris.png" alt="Bibliotheque des titres favoris" width="100%">
+      <br><strong>Favoris</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/09-playlists.png" alt="Gestion des playlists utilisateur" width="100%">
+      <br><strong>Playlists</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/06-parametres.png" alt="Page des parametres du profil" width="100%">
+      <br><strong>Parametres du profil</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/05-administration.png" alt="Interface d'administration" width="100%">
+      <br><strong>Administration</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/10-swagger-openapi.png" alt="Documentation Swagger OpenAPI de l'API REST" width="100%">
+      <br><strong>Swagger OpenAPI</strong>
+    </td>
+  </tr>
+</table>
 
 ### 5.3 Comptes demo
 
@@ -351,6 +405,12 @@ API locale:
 
 ```text
 http://localhost:8080
+```
+
+Documentation Swagger:
+
+```text
+http://localhost:8080/swagger-ui.html
 ```
 
 ### 6.3 Lancer le frontend
@@ -419,7 +479,7 @@ npm run build
 - Ajouter une page dediee au titre partage avec une route Angular explicite.
 - Prevoir un deploiement avec variables d'environnement separees.
 - Ajouter une pagination avancee pour le catalogue.
-- Ajouter une documentation OpenAPI/Swagger.
+- Enrichir la documentation OpenAPI avec des exemples de requetes et reponses.
 - Verifier les conditions d'utilisation des API musicales avant production.
 
 ## 9. Conclusion
@@ -432,6 +492,7 @@ administration.
 
 Les principaux defis ont ete l'integration des sources musicales externes, la
 gestion des liens de partage et la separation propre entre frontend, backend et
-base de donnees. La solution reste evolutive: elle peut etre enrichie par une
-route de partage dediee, une meilleure observabilite, plus de tests et un
+base de donnees. La documentation Swagger/OpenAPI facilite la lecture et le test
+des endpoints REST. La solution reste evolutive: elle peut etre enrichie par
+une route de partage dediee, une meilleure observabilite, plus de tests et un
 deploiement prepare pour la production.

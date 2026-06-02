@@ -45,7 +45,7 @@
     urlcolor=secondary,
     citecolor=primary,
     pdftitle={Rapport de projet MeloStream},
-    pdfauthor={Ayoub}
+    pdfauthor={Ayoub El Houani, Oussama Felouach, Mbarek Ettaleby}
 }
 
 \pagestyle{fancy}
@@ -124,16 +124,21 @@
     \vfill
 
     \begin{tabular}{rl}
-        \textbf{Réalisé par :} & Ayoub \\
+        \textbf{Réalisé par :} &
+        \begin{tabular}[t]{l}
+            Ayoub El Houani \\
+            Oussama Felouach \\
+            Mbarek Ettaleby
+        \end{tabular} \\
         \textbf{Type :} & Projet web full-stack \\
         \textbf{Backend :} & Java 21, Spring Boot \\
         \textbf{Frontend :} & Angular, TypeScript \\
         \textbf{Base de données :} & MySQL \\
-        \textbf{Année universitaire :} & 2025--2027 \\
     \end{tabular}
 
     \vfill
-    {\large \today\par}
+    {\large \textbf{Année universitaire :} 2025--2027\par}
+
 \end{titlepage}
 
 \tableofcontents
@@ -185,6 +190,22 @@ Les objectifs du projet sont :
     \item produire une documentation claire pour comprendre, lancer et maintenir
     le projet.
 \end{itemize}
+
+\section*{Démarche de réalisation}
+\addcontentsline{toc}{section}{Démarche de réalisation}
+
+La réalisation du projet a été organisée de manière progressive. Une première
+étape a consisté à définir les besoins principaux et les entités nécessaires :
+utilisateurs, jetons de connexion, favoris, playlists et titres musicaux. Le
+backend a ensuite été mis en place pour exposer une API REST sécurisée, avant
+d'intégrer l'interface Angular et les appels vers les services musicaux
+externes.
+
+Le développement a suivi une logique fonctionnelle : chaque fonctionnalité
+visible dans l'interface correspond à un ensemble clair de routes backend, de
+services métier, de DTO et de méthodes côté frontend. Cette approche facilite
+la maintenance, car une évolution sur les favoris, les playlists ou
+l'administration reste localisée dans le domaine concerné.
 
 % ------------------------------------------------------------
 % Cahier des charges
@@ -277,6 +298,12 @@ La solution proposée repose sur :
     \code{ADMIN}.
 \end{itemize}
 
+Cette solution permet de séparer les responsabilités. Le frontend gère
+l'affichage, les formulaires, les interactions utilisateur et le lecteur audio.
+Le backend contrôle les règles métier, la persistance et la sécurité. La base
+MySQL conserve les données propres à l'application, tandis que les informations
+musicales sont récupérées à la demande depuis des services externes.
+
 % ------------------------------------------------------------
 % Conception fonctionnelle
 % ------------------------------------------------------------
@@ -332,6 +359,18 @@ API musicale externe & Fournit les titres, artistes, albums, images et audios. \
 \end{tikzpicture}
 \caption{Diagramme de cas d'utilisation simplifié}
 \end{figure}
+
+\textbf{Explication du diagramme :} ce diagramme présente les principales
+interactions entre les acteurs et l'application. Le visiteur dispose seulement
+des actions d'inscription et de connexion. Après authentification, il devient
+utilisateur et peut accéder aux fonctionnalités musicales : recherche, écoute,
+favoris, playlists et partage. L'administrateur hérite des usages généraux de
+l'application, mais possède en plus l'accès à la gestion des utilisateurs.
+
+Cette représentation permet de visualiser rapidement le périmètre fonctionnel
+du projet et de distinguer les fonctionnalités publiques, les fonctionnalités
+réservées aux utilisateurs connectés et les fonctionnalités réservées aux
+administrateurs.
 
 \section{Diagramme de classes}
 
@@ -391,10 +430,38 @@ API musicale externe & Fournit les titres, artistes, albums, images et audios. \
 \caption{Diagramme de classes principal}
 \end{figure}
 
+\textbf{Explication du diagramme :} le diagramme de classes décrit les entités
+centrales utilisées par le backend. La classe \code{UserAccount} représente un
+compte utilisateur et contient les informations nécessaires à l'identification,
+au profil et au rôle. La classe \code{AuthToken} est liée à un utilisateur et
+sert à conserver les jetons de session utilisés pour authentifier les requêtes.
+
+La classe \code{FavoriteTrack} permet de sauvegarder un titre dans la
+bibliothèque personnelle d'un utilisateur. Elle garde les informations
+essentielles du morceau afin de pouvoir l'afficher rapidement dans les favoris.
+La classe \code{TrackDto} représente un titre normalisé venant d'une API
+musicale externe. Le lien en pointillés montre que le favori référence un titre
+externe, mais que ce titre n'est pas une entité persistée de la même manière
+qu'un utilisateur ou un jeton.
+
 Le modèle est complété par les classes \code{Playlist} et
 \code{PlaylistTrack}. Une playlist appartient à un utilisateur, et une playlist
 contient plusieurs titres. Cette relation permet d'organiser les chansons au
 delà de la simple liste de favoris.
+
+\section{Organisation des données}
+
+Les données de l'application sont réparties entre les données internes et les
+données externes. Les données internes concernent les comptes utilisateurs, les
+jetons d'authentification, les favoris et les playlists. Elles sont stockées
+dans MySQL afin de rester disponibles après le redémarrage de l'application.
+
+Les données musicales, comme le titre, l'artiste, l'album, la pochette ou
+l'extrait audio, proviennent principalement des API Deezer et Jamendo. Le
+backend les transforme en objets \code{TrackDto} pour fournir au frontend un
+format unique, quelle que soit la source musicale utilisée. Cette normalisation
+évite de faire dépendre l'interface Angular du format exact de chaque API
+externe.
 
 \section{Scénario de partage d'un titre}
 
@@ -441,6 +508,25 @@ directement au même titre.
 \caption{Architecture technique de MeloStream}
 \end{figure}
 
+\textbf{Explication du diagramme :} ce diagramme montre le chemin suivi par les
+données entre l'utilisateur et les différentes couches du système. Le navigateur
+communique avec le frontend Angular, qui se charge de l'interface, des
+formulaires et des interactions utilisateur. En développement local, Angular
+redirige les requêtes commençant par \path{/api} vers le backend Spring Boot
+grâce au proxy.
+
+Le backend joue le rôle de point central. Il applique les règles métier,
+contrôle la sécurité, interroge MySQL pour les données internes et contacte les
+API musicales pour récupérer les titres. Cette organisation évite d'exposer
+directement la base de données ou les clés éventuelles des services externes
+côté client.
+
+Les échanges entre les couches suivent un format JSON. Les controllers REST
+reçoivent les requêtes, les services appliquent les règles métier, les
+repositories accèdent aux données persistées et les mappers construisent les
+DTO retournés au frontend. Cette séparation rend le code plus lisible et limite
+les dépendances entre les couches.
+
 \section{Technologies utilisées}
 
 \begin{longtable}{|p{3.6cm}|p{10cm}|}
@@ -452,6 +538,8 @@ Frontend & Angular 21, TypeScript, RxJS, CSS responsive, \code{@lucide/angular}.
 Backend & Java 21, Spring Boot 4.0.6, Spring Web MVC, Spring Security, Spring Data JPA. \\
 \hline
 Base de données & MySQL avec accès possible via phpMyAdmin. \\
+\hline
+Documentation API & Springdoc OpenAPI 3.0.3 et Swagger UI. \\
 \hline
 APIs externes & Deezer public API et Jamendo API optionnelle. \\
 \hline
@@ -502,11 +590,24 @@ aux endpoints protégés.
 
 \begin{itemize}
     \item \path{/api/auth/login} et \path{/api/auth/register} sont publics.
+    \item \path{/swagger-ui.html}, \path{/swagger-ui/**} et \path{/v3/api-docs/**} sont publics pour consulter la documentation API.
     \item Les endpoints \path{/api/**} nécessitent une authentification.
     \item Les endpoints \path{/api/admin/**} nécessitent le rôle \code{ADMIN}.
     \item Les mots de passe sont hashés avant stockage.
     \item Les règles CORS autorisent le frontend local sur le port 4200.
 \end{itemize}
+
+Lorsqu'un utilisateur se connecte, le backend vérifie l'email et le mot de
+passe, puis crée un jeton temporaire valable plusieurs jours. Ce jeton est
+envoyé au frontend et stocké localement. Pour les requêtes privées, Angular
+l'ajoute dans l'en-tête \code{Authorization}. Le filtre de sécurité du backend
+lit ce jeton, retrouve l'utilisateur associé et autorise ou refuse l'accès
+selon son rôle.
+
+Cette stratégie reste simple à utiliser dans un projet pédagogique tout en
+respectant les principes essentiels : les mots de passe ne circulent qu'au
+moment de la connexion, les routes sensibles sont protégées et les actions
+administrateur sont séparées des actions utilisateur.
 
 \section{Endpoints REST principaux}
 
@@ -556,6 +657,26 @@ aux endpoints protégés.
 \hline
 \end{longtable}
 
+\section{Documentation OpenAPI et Swagger}
+
+Le backend intègre Springdoc OpenAPI afin de générer automatiquement une
+documentation interactive à partir des controllers REST. La page Swagger UI est
+accessible localement après le démarrage du backend :
+
+\begin{lstlisting}
+http://localhost:8080/swagger-ui.html
+\end{lstlisting}
+
+La spécification OpenAPI JSON est disponible à l'adresse suivante :
+
+\begin{lstlisting}
+http://localhost:8080/v3/api-docs
+\end{lstlisting}
+
+Cette interface permet de consulter les endpoints, les schémas DTO et
+d'utiliser le bouton \code{Authorize} avec le jeton d'authentification retourné
+par l'endpoint de connexion.
+
 % ------------------------------------------------------------
 % Réalisation
 % ------------------------------------------------------------
@@ -570,11 +691,22 @@ L'utilisateur peut créer un compte, se connecter et se déconnecter. Après une
 connexion réussie, un jeton est utilisé pour sécuriser les requêtes suivantes.
 Les comptes de démonstration sont créés automatiquement au démarrage.
 
+Le formulaire d'authentification vérifie les informations saisies avant
+l'envoi au backend. Après une connexion réussie, l'utilisateur accède au tableau
+de bord musical avec son profil chargé depuis l'endpoint \path{/api/auth/me}.
+La déconnexion supprime le jeton local et invalide les jetons actifs côté
+serveur.
+
 \subsection{Recherche musicale}
 
 Le catalogue permet de rechercher des titres par mot-clé. L'utilisateur peut
 chercher un titre, un artiste ou un album. Le backend interroge les services
 musicaux externes et retourne des objets normalisés au frontend.
+
+Les résultats affichent les informations utiles à l'écoute et à l'organisation
+des titres : nom de la chanson, artiste, album, image, durée et source. Cette
+présentation donne à l'utilisateur assez de contexte pour lancer la lecture,
+ajouter le titre aux favoris, le placer dans une playlist ou le partager.
 
 \subsection{Lecture}
 
@@ -582,16 +714,31 @@ Chaque titre peut être lancé depuis l'interface. Une attention particulière a
 été portée au comportement après connexion : l'application ne lance pas la
 musique automatiquement.
 
+Le lecteur reste donc contrôlé par l'utilisateur. Lorsqu'un titre est choisi,
+l'application met à jour la zone de lecture rapide et utilise l'URL audio
+fournie par l'API musicale. Si aucun extrait n'est disponible, l'interface peut
+continuer à afficher le titre sans déclencher de lecture.
+
 \subsection{Favoris}
 
 Un utilisateur connecté peut sauvegarder un titre dans ses favoris et le
 retrouver plus tard. Les favoris sont persistés dans la base MySQL.
+
+Chaque favori est rattaché au compte connecté. Cela permet d'avoir une
+bibliothèque personnelle différente pour chaque utilisateur. La contrainte
+d'unicité évite d'ajouter plusieurs fois le même titre dans les favoris d'un
+même compte.
 
 \subsection{Playlists}
 
 L'utilisateur peut créer des playlists personnalisées, les renommer, les
 supprimer et y ajouter des chansons depuis le catalogue ou la bibliothèque. Les
 titres d'une playlist peuvent ensuite être écoutés, partagés ou retirés.
+
+Les playlists complètent les favoris en ajoutant une organisation par listes.
+Elles sont utiles pour regrouper des chansons par thème, humeur ou usage. Le
+backend vérifie que l'utilisateur connecté est bien propriétaire de la playlist
+avant d'autoriser les modifications.
 
 \subsection{Partage}
 
@@ -605,17 +752,35 @@ http://localhost:4200/?song=deezer:3135556
 Lorsqu'un autre utilisateur ouvre ce lien, le titre est chargé après
 authentification.
 
+Le partage ne stocke pas une copie complète du titre dans l'URL. Le lien
+contient seulement la source musicale et l'identifiant externe. Le backend peut
+alors recharger les informations du morceau via l'endpoint dédié et renvoyer au
+frontend un \code{TrackDto} complet.
+
 \subsection{Administration}
 
 Les comptes administrateurs peuvent consulter les statistiques, lister les
 utilisateurs, modifier les rôles et supprimer un utilisateur autre que leur
 propre compte.
 
+L'espace administrateur est masqué pour les utilisateurs simples et protégé
+côté backend. Les statistiques donnent une vue rapide sur le nombre
+d'utilisateurs, de favoris et de playlists. Les actions sensibles, comme la
+suppression d'un compte ou la modification d'un rôle, passent par les endpoints
+\path{/api/admin/**}.
+
+\subsection{Documentation API}
+
+Swagger UI fournit une documentation interactive des endpoints REST du backend.
+Elle facilite la vérification des routes, des paramètres et des modèles échangés
+entre le frontend Angular et l'API Spring Boot.
+
 \section{Captures d'écran}
 
 Les captures suivantes ont été réalisées sur l'application locale. Elles
 présentent les principaux écrans développés : authentification, inscription,
-catalogue, recherche, partage, favoris, playlists, paramètres et administration.
+catalogue, recherche, partage, favoris, playlists, paramètres, administration
+et documentation Swagger.
 
 \begin{figure}[H]
     \centering
@@ -671,6 +836,12 @@ catalogue, recherche, partage, favoris, playlists, paramètres et administration
     \caption{Interface d'administration}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{10-swagger-openapi.png}
+    \caption{Documentation Swagger OpenAPI de l'API REST}
+\end{figure}
+
 \section{Comptes de démonstration}
 
 \begin{longtable}{|p{6cm}|p{4cm}|p{3cm}|}
@@ -717,6 +888,11 @@ password: vide
 La base est créée automatiquement grâce à l'option
 \code{createDatabaseIfNotExist=true}.
 
+Au premier démarrage, Hibernate crée ou met à jour les tables nécessaires selon
+les entités JPA du projet. Le composant de démarrage ajoute ensuite les comptes
+de démonstration si ceux-ci n'existent pas encore. Cette configuration simplifie
+les tests en local, car l'application peut être lancée sans script SQL manuel.
+
 \section{Lancement du backend}
 
 \begin{lstlisting}
@@ -728,6 +904,12 @@ Le backend démarre sur :
 
 \begin{lstlisting}
 http://localhost:8080
+\end{lstlisting}
+
+La documentation Swagger est ensuite disponible sur :
+
+\begin{lstlisting}
+http://localhost:8080/swagger-ui.html
 \end{lstlisting}
 
 \section{Lancement du frontend}
@@ -766,6 +948,10 @@ cd backend
 .\mvnw.cmd test
 \end{lstlisting}
 
+Les tests backend utilisent le profil de test et une base H2 en mémoire. Cela
+permet de vérifier le chargement du contexte Spring Boot et la configuration
+principale sans dépendre de la base MySQL locale.
+
 \section{Tests frontend}
 
 \begin{lstlisting}
@@ -779,6 +965,11 @@ npm test -- --watch=false
 cd frontend
 npm run build
 \end{lstlisting}
+
+Le build frontend vérifie que l'application Angular se compile correctement,
+que les imports TypeScript sont valides et que les fichiers de production sont
+générés dans le dossier \code{dist}. Cette étape complète les tests backend et
+confirme que les deux parties du projet peuvent être lancées ensemble.
 
 % ------------------------------------------------------------
 % Conclusion
@@ -795,8 +986,9 @@ backend Spring Boot et la base MySQL, ce qui facilite la maintenance et les
 
 Les principaux défis rencontrés concernent l'intégration des API musicales
 externes, la gestion des liens de partage et la sécurisation des endpoints. Le
-projet peut encore être amélioré avec une route Angular dédiée au partage, une
-documentation OpenAPI, davantage de tests d'intégration et une configuration de
-déploiement adaptée à la production.
+projet dispose aussi d'une documentation Swagger/OpenAPI qui facilite la
+consultation et le test des routes REST. Il peut encore être amélioré avec une
+route Angular dédiée au partage, davantage de tests d'intégration et une
+configuration de déploiement adaptée à la production.
 
 \end{document}
