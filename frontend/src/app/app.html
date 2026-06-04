@@ -187,9 +187,13 @@
               placeholder="Rechercher un titre, artiste ou album"
               autocomplete="off"
             />
-            <button type="submit" [disabled]="isLoading()">
+            <button
+              type="submit"
+              [disabled]="isLoading()"
+              aria-label="Rechercher"
+              title="Rechercher"
+            >
               <svg lucideSearch class="icon" size="18"></svg>
-              Rechercher
             </button>
           </form>
 
@@ -401,13 +405,32 @@
                       </div>
                     </div>
                     <div class="playlist-header-actions">
-                      <button type="button" (click)="beginRenamePlaylist(playlist)">
-                        <svg lucideSave class="icon" size="16"></svg>
-                        Renommer
+                      <button
+                        type="button"
+                        class="primary"
+                        (click)="playPlaylist(playlist)"
+                        [disabled]="playlist.tracks.length === 0"
+                        aria-label="Lire la playlist"
+                        title="Lire la playlist"
+                      >
+                        <svg lucidePlay class="icon" size="16"></svg>
                       </button>
-                      <button type="button" class="danger" (click)="deletePlaylist(playlist)">
+                      <button
+                        type="button"
+                        (click)="beginRenamePlaylist(playlist)"
+                        aria-label="Renommer la playlist"
+                        title="Renommer"
+                      >
+                        <svg lucideSave class="icon" size="16"></svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="danger"
+                        (click)="deletePlaylist(playlist)"
+                        aria-label="Supprimer la playlist"
+                        title="Supprimer"
+                      >
                         <svg lucideTrash2 class="icon" size="16"></svg>
-                        Supprimer
                       </button>
                     </div>
                   }
@@ -417,8 +440,11 @@
                   <section class="playlist-track-list">
                     @for (track of playlist.tracks; track track.source + ':' + track.id) {
                       <article class="playlist-track">
-                        <button type="button" class="playlist-cover" (click)="playTrack(track)">
+                        <button type="button" class="playlist-cover" (click)="playPlaylistTrack(playlist, track)">
                           <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+                          <span class="cover-play" aria-hidden="true">
+                            <svg lucidePlay class="icon" size="18"></svg>
+                          </span>
                         </button>
                         <div>
                           <strong>{{ track.title }}</strong>
@@ -426,17 +452,17 @@
                         </div>
                         <small class="playlist-duration">{{ formatDuration(track.duration) }}</small>
                         <div class="playlist-track-actions">
-                          <button type="button" class="primary" (click)="playTrack(track)">
-                            <svg lucidePlay class="icon" size="15"></svg>
-                            Play
-                          </button>
-                          <button type="button" (click)="shareTrack(track)">
+                          <button type="button" (click)="shareTrack(track)" aria-label="Partager ce titre" title="Partager">
                             <svg lucideShare2 class="icon" size="15"></svg>
-                            Partager
                           </button>
-                          <button type="button" class="danger" (click)="removeTrackFromPlaylist(playlist, track)">
+                          <button
+                            type="button"
+                            class="danger"
+                            (click)="removeTrackFromPlaylist(playlist, track)"
+                            aria-label="Retirer ce titre"
+                            title="Retirer"
+                          >
                             <svg lucideTrash2 class="icon" size="15"></svg>
-                            Retirer
                           </button>
                         </div>
                       </article>
@@ -537,6 +563,9 @@
               <article class="track-card" [class.playing]="currentTrack()?.id === track.id">
                 <button type="button" class="cover-button" (click)="playTrack(track)">
                   <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+                  <span class="cover-play" aria-hidden="true">
+                    <svg lucidePlay class="icon" size="24"></svg>
+                  </span>
                 </button>
                 <div class="track-body">
                   <div>
@@ -545,21 +574,26 @@
                   </div>
                   <div class="track-actions">
                     <span>{{ formatDuration(track.duration) }}</span>
-                    <button type="button" (click)="toggleFavorite(track)">
+                    <button
+                      type="button"
+                      class="favorite-toggle"
+                      [class.saved]="isFavorite(track)"
+                      (click)="toggleFavorite(track)"
+                      aria-label="Retirer des favoris"
+                      title="Retirer"
+                    >
                       <svg lucideTrash2 class="icon" size="15"></svg>
-                      Retirer
                     </button>
-                    <button type="button" (click)="shareTrack(track)">
+                    <button type="button" (click)="shareTrack(track)" aria-label="Partager ce titre" title="Partager">
                       <svg lucideShare2 class="icon" size="15"></svg>
-                      Partager
                     </button>
-                    <button type="button" (click)="openPlaylistPicker(track)">
+                    <button
+                      type="button"
+                      (click)="openPlaylistPicker(track)"
+                      aria-label="Ajouter a une playlist"
+                      title="Playlist"
+                    >
                       <svg lucideListPlus class="icon" size="15"></svg>
-                      Playlist
-                    </button>
-                    <button type="button" class="primary" (click)="playTrack(track)">
-                      <svg lucidePlay class="icon" size="15"></svg>
-                      Play
                     </button>
                   </div>
                 </div>
@@ -572,25 +606,38 @@
       } @else {
         @if (heroTrack(); as track) {
         <section class="feature">
-          <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+          <button type="button" class="feature-cover" (click)="playTrack(track)" aria-label="Lire ce titre" title="Lire">
+            <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+            <span class="cover-play" aria-hidden="true">
+              <svg lucidePlay class="icon" size="28"></svg>
+            </span>
+          </button>
           <div>
             <span class="eyebrow">Lecture rapide</span>
             <h2>{{ track.title }}</h2>
             <p>{{ track.artist }} - {{ track.album }}</p>
             <div class="feature-actions">
-              <button type="button" class="primary" (click)="playTrack(track)">
-                <svg lucidePlay class="icon" size="18"></svg>
-                Ecouter
-              </button>
-              <button type="button" (click)="toggleFavorite(track)">
+              <button
+                type="button"
+                class="favorite-toggle"
+                [class.saved]="isFavorite(track)"
+                (click)="toggleFavorite(track)"
+                [attr.aria-label]="isFavorite(track) ? 'Retirer des favoris' : 'Sauvegarder dans les favoris'"
+                [title]="isFavorite(track) ? 'Retirer' : 'Sauvegarder'"
+              >
                 <svg lucideHeart class="icon" size="18"></svg>
                 {{ isFavorite(track) ? 'Retirer' : 'Sauvegarder' }}
               </button>
-              <button type="button" (click)="shareTrack(track)">
+              <button type="button" (click)="shareTrack(track)" aria-label="Partager ce titre" title="Partager">
                 <svg lucideShare2 class="icon" size="18"></svg>
                 Partager
               </button>
-              <button type="button" (click)="openPlaylistPicker(track)">
+              <button
+                type="button"
+                (click)="openPlaylistPicker(track)"
+                aria-label="Ajouter a une playlist"
+                title="Playlist"
+              >
                 <svg lucideListPlus class="icon" size="18"></svg>
                 Playlist
               </button>
@@ -623,6 +670,9 @@
             <article class="track-card" [class.playing]="currentTrack()?.id === track.id">
               <button type="button" class="cover-button" (click)="playTrack(track)">
                 <img [src]="track.imageUrl" [alt]="track.album || track.title" />
+                <span class="cover-play" aria-hidden="true">
+                  <svg lucidePlay class="icon" size="24"></svg>
+                </span>
               </button>
               <div class="track-body">
                 <div>
@@ -631,21 +681,26 @@
                 </div>
                 <div class="track-actions">
                   <span>{{ formatDuration(track.duration) }}</span>
-                  <button type="button" (click)="toggleFavorite(track)">
+                  <button
+                    type="button"
+                    class="favorite-toggle"
+                    [class.saved]="isFavorite(track)"
+                    (click)="toggleFavorite(track)"
+                    [attr.aria-label]="isFavorite(track) ? 'Retirer des favoris' : 'Sauvegarder dans les favoris'"
+                    [title]="isFavorite(track) ? 'Retirer' : 'Sauvegarder'"
+                  >
                     <svg lucideHeart class="icon" size="15"></svg>
-                    {{ isFavorite(track) ? 'Enregistre' : 'Sauvegarder' }}
                   </button>
-                  <button type="button" (click)="shareTrack(track)">
+                  <button type="button" (click)="shareTrack(track)" aria-label="Partager ce titre" title="Partager">
                     <svg lucideShare2 class="icon" size="15"></svg>
-                    Partager
                   </button>
-                  <button type="button" (click)="openPlaylistPicker(track)">
+                  <button
+                    type="button"
+                    (click)="openPlaylistPicker(track)"
+                    aria-label="Ajouter a une playlist"
+                    title="Playlist"
+                  >
                     <svg lucideListPlus class="icon" size="15"></svg>
-                    Playlist
-                  </button>
-                  <button type="button" class="primary" (click)="playTrack(track)">
-                    <svg lucidePlay class="icon" size="15"></svg>
-                    Play
                   </button>
                 </div>
               </div>
@@ -742,8 +797,42 @@
         <svg lucideHeadphones class="player-icon" size="18"></svg>
         <strong>{{ track.title }}</strong>
         <span>{{ track.artist }}</span>
+        @if (playbackError()) {
+          <small>{{ playbackError() }}</small>
+        }
       </div>
-      <audio controls [autoplay]="shouldAutoplay()" [src]="track.audioUrl"></audio>
+      <div class="player-controls">
+        <button
+          type="button"
+          class="player-skip"
+          (click)="playPreviousTrack()"
+          [disabled]="!hasPreviousTrack()"
+          aria-label="Titre precedent"
+          title="Titre precedent"
+        >
+          <svg lucideSkipBack class="icon" size="18"></svg>
+        </button>
+        <audio
+          #audioPlayer
+          controls
+          [autoplay]="shouldAutoplay()"
+          [src]="track.audioUrl"
+          (canplay)="handleAudioCanPlay()"
+          (play)="handleAudioPlay()"
+          (ended)="playNextTrack()"
+          (error)="handleAudioError($event)"
+        ></audio>
+        <button
+          type="button"
+          class="player-skip"
+          (click)="playNextTrack()"
+          [disabled]="!hasNextTrack()"
+          aria-label="Titre suivant"
+          title="Titre suivant"
+        >
+          <svg lucideSkipForward class="icon" size="18"></svg>
+        </button>
+      </div>
     </aside>
   }
 }

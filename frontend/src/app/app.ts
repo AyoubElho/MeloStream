@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LucideClock,
@@ -18,6 +18,8 @@ import {
   LucideSettings,
   LucideShare2,
   LucideShield,
+  LucideSkipBack,
+  LucideSkipForward,
   LucideTrash2,
   LucideUserPlus,
   LucideUsers,
@@ -55,6 +57,8 @@ type DashboardView = 'discover' | 'library' | 'playlists' | 'settings' | 'admin'
     LucideSettings,
     LucideShare2,
     LucideShield,
+    LucideSkipBack,
+    LucideSkipForward,
     LucideTrash2,
     LucideUserPlus,
     LucideUsers,
@@ -64,8 +68,11 @@ type DashboardView = 'discover' | 'library' | 'playlists' | 'settings' | 'admin'
   styleUrl: './app.css',
 })
 export class App implements OnInit {
+  @ViewChild('audioPlayer') private audioPlayer?: ElementRef<HTMLAudioElement>;
+
   private readonly adminApi = inject(AdminApi);
   private readonly authApi = inject(AuthApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly favoriteApi = inject(FavoriteApi);
   private readonly musicApi = inject(MusicApi);
   private readonly playlistApi = inject(PlaylistApi);
@@ -98,6 +105,7 @@ export class App implements OnInit {
   protected readonly shareError = signal<string | null>(null);
   protected readonly playlistMessage = signal<string | null>(null);
   protected readonly playlistError = signal<string | null>(null);
+  protected readonly playbackError = signal<string | null>(null);
   protected readonly settingsError = signal<string | null>(null);
   protected readonly settingsMessage = signal<string | null>(null);
   protected readonly tracks = signal<Track[]>([]);
@@ -112,6 +120,10 @@ export class App implements OnInit {
   protected readonly shouldAutoplay = signal(false);
   protected readonly favoriteIds = signal<Set<string>>(new Set());
   protected readonly updatingRoleIds = signal<Set<number>>(new Set());
+  private readonly playbackQueue = signal<Track[]>([]);
+  private readonly playbackQueueIndex = signal<number | null>(null);
+  private readonly playbackRecoveryAttempts = new Map<string, number>();
+  private readonly refreshingTrackKeys = new Set<string>();
 
   protected readonly moods = [
     { label: 'Top', value: 'all' },
@@ -132,6 +144,14 @@ export class App implements OnInit {
   });
   protected readonly catalogTracks = computed(() => this.tracks().slice(1));
   protected readonly isAdmin = computed(() => this.user()?.role === 'ADMIN');
+  protected readonly hasPreviousTrack = computed(() => {
+    const currentIndex = this.playbackQueueIndex();
+    return currentIndex !== null && currentIndex > 0;
+  });
+  protected readonly hasNextTrack = computed(() => {
+    const currentIndex = this.playbackQueueIndex();
+    return currentIndex !== null && currentIndex < this.playbackQueue().length - 1;
+  });
 
   ngOnInit(): void {
     this.restoreSession();
@@ -191,10 +211,15 @@ export class App implements OnInit {
         this.selectedPlaylistId.set(null);
         this.editingPlaylistId.set(null);
         this.shouldAutoplay.set(false);
+        this.playbackQueue.set([]);
+        this.playbackQueueIndex.set(null);
+        this.playbackRecoveryAttempts.clear();
+        this.refreshingTrackKeys.clear();
         this.shareMessage.set(null);
         this.shareError.set(null);
         this.playlistMessage.set(null);
         this.playlistError.set(null);
+        this.playbackError.set(null);
         this.newPlaylistName = '';
         this.renamePlaylistName = '';
         this.activeView.set('discover');
@@ -499,8 +524,65 @@ export class App implements OnInit {
   }
 
   protected playTrack(track: Track): void {
+    this.startPlayback(track);
+  }
+
+  protected playPlaylist(playlist: Playlist): void {
+    const firstTrack = playlist.tracks[0];
+    if (!firstTrack) {
+      return;
+    }
+
+    this.startPlayback(firstTrack, playlist.tracks, 0);
+  }
+
+  protected playPlaylistTrack(playlist: Playlist, track: Track): void {
+    this.startPlayback(track, playlist.tracks);
+  }
+
+  protected playNextTrack(): void {
+    this.playQueuedTrack(1);
+  }
+
+  protected playPreviousTrack(): void {
+    this.playQueuedTrack(-1);
+  }
+
+  protected handleAudioCanPlay(): void {
+    this.resumeAudioIfRequested();
+  }
+
+  protected handleAudioPlay(): void {
     this.shouldAutoplay.set(true);
-    this.currentTrack.set(track);
+  }
+
+  private playQueuedTrack(direction: -1 | 1): boolean {
+    const queue = this.playbackQueue();
+    const currentIndex = this.playbackQueueIndex();
+    const nextIndex = currentIndex === null ? -1 : currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= queue.length) {
+      if (direction > 0) {
+        this.shouldAutoplay.set(false);
+      }
+      return false;
+    }
+
+    this.startPlayback(queue[nextIndex], queue, nextIndex);
+    return true;
+  }
+
+  protected handleAudioError(event?: Event): void {
+    const track = this.currentTrack();
+    if (!track) {
+      return;
+    }
+
+    const audio = event?.target instanceof HTMLAudioElement ? event.target : null;
+    if (audio?.currentSrc && track.audioUrl && audio.currentSrc !== track.audioUrl) {
+      return;
+    }
+
+    this.refreshTrackForPlayback(track);
   }
 
   protected async shareTrack(track: Track): Promise<void> {
@@ -758,6 +840,143 @@ export class App implements OnInit {
   private withTrackAtFront(tracks: Track[], track: Track): Track[] {
     const source = this.musicSource(track);
     return [track, ...tracks.filter((item) => this.musicSource(item) !== source || item.id !== track.id)];
+  }
+
+  private startPlayback(
+    track: Track,
+    queue: Track[] = [],
+    queueIndex: number | null = null,
+    resetRecovery = true,
+  ): void {
+    const nextQueueIndex = queueIndex ?? this.findTrackIndex(queue, track);
+    const key = this.trackKey(track);
+    if (resetRecovery) {
+      this.playbackRecoveryAttempts.delete(key);
+    }
+
+    this.playbackQueue.set(nextQueueIndex >= 0 ? [...queue] : []);
+    this.playbackQueueIndex.set(nextQueueIndex >= 0 ? nextQueueIndex : null);
+    this.shouldAutoplay.set(true);
+    this.playbackError.set(null);
+    this.currentTrack.set(track);
+
+    if (!this.hasAudioUrl(track)) {
+      this.refreshTrackForPlayback(track);
+      return;
+    }
+
+    this.playSelectedAudio();
+  }
+
+  private playSelectedAudio(): void {
+    this.changeDetector.detectChanges();
+    const audio = this.audioPlayer?.nativeElement;
+    if (!audio) {
+      return;
+    }
+
+    try {
+      audio.load();
+      this.resumeAudioIfRequested(audio);
+    } catch {
+      this.shouldAutoplay.set(false);
+    }
+  }
+
+  private resumeAudioIfRequested(audio = this.audioPlayer?.nativeElement): void {
+    if (!audio || !this.shouldAutoplay()) {
+      return;
+    }
+
+    void audio.play().catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        this.playbackError.set('Clique sur Play dans le lecteur pour continuer.');
+      }
+    });
+  }
+
+  private findTrackIndex(tracks: Track[], track: Track): number {
+    return tracks.findIndex((item) => this.isSameTrack(item, track));
+  }
+
+  private refreshTrackForPlayback(track: Track): void {
+    const key = this.trackKey(track);
+    if (this.refreshingTrackKeys.has(key)) {
+      return;
+    }
+
+    const recoveryAttempts = this.playbackRecoveryAttempts.get(key) ?? 0;
+    if (recoveryAttempts >= 1) {
+      this.handleUnavailableTrack("Impossible de lire ce titre depuis la playlist.");
+      return;
+    }
+
+    this.playbackRecoveryAttempts.set(key, recoveryAttempts + 1);
+    this.refreshingTrackKeys.add(key);
+    this.playbackError.set('Chargement du lien audio...');
+
+    this.musicApi.getTrack(this.musicSource(track), track.id)
+      .pipe(finalize(() => this.refreshingTrackKeys.delete(key)))
+      .subscribe({
+        next: (freshTrack) => {
+          if (!this.hasAudioUrl(freshTrack)) {
+            this.handleUnavailableTrack("Ce titre n'a pas de lien audio disponible.");
+            return;
+          }
+
+          const replacement = { ...track, ...freshTrack };
+          const refreshedQueue = this.replaceTrackInQueue(track, replacement);
+          this.replaceTrackEverywhere(track, replacement);
+          const currentIndex = this.playbackQueueIndex();
+          this.startPlayback(replacement, refreshedQueue, currentIndex, false);
+        },
+        error: () => {
+          this.handleUnavailableTrack("Impossible de recuperer le lien audio de ce titre.");
+        },
+      });
+  }
+
+  private handleUnavailableTrack(message: string): void {
+    if (this.playFollowingQueuedTrack()) {
+      return;
+    }
+
+    this.shouldAutoplay.set(false);
+    this.playbackError.set(message);
+  }
+
+  private playFollowingQueuedTrack(): boolean {
+    return this.playQueuedTrack(1);
+  }
+
+  private replaceTrackInQueue(originalTrack: Track, replacementTrack: Track): Track[] {
+    const queue = this.playbackQueue();
+    if (queue.length === 0) {
+      return [];
+    }
+
+    return queue.map((item) => this.isSameTrack(item, originalTrack) ? replacementTrack : item);
+  }
+
+  private replaceTrackEverywhere(originalTrack: Track, replacementTrack: Track): void {
+    this.playlists.set(this.playlists().map((playlist) => ({
+      ...playlist,
+      tracks: playlist.tracks.map((item) => this.isSameTrack(item, originalTrack) ? replacementTrack : item),
+    })));
+    this.savedTracks.set(this.savedTracks().map((item) => this.isSameTrack(item, originalTrack) ? replacementTrack : item));
+    this.tracks.set(this.tracks().map((item) => this.isSameTrack(item, originalTrack) ? replacementTrack : item));
+  }
+
+  private hasAudioUrl(track: Track): boolean {
+    return Boolean(track.audioUrl?.trim());
+  }
+
+  private isSameTrack(left: Track, right: Track): boolean {
+    return this.musicSource(left) === this.musicSource(right) && left.id === right.id;
+  }
+
+  private trackKey(track: Track): string {
+    return `${this.musicSource(track)}:${track.id}`;
   }
 
   private musicSource(track: Track): MusicSource {

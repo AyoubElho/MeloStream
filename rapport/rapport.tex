@@ -260,6 +260,10 @@ BF11 & Charger automatiquement le titre ciblé lorsqu'un lien partagé est ouver
 \hline
 BF12 & Accéder à un espace administrateur pour gérer les utilisateurs. \\
 \hline
+BF13 & Enchaîner automatiquement les titres d'une playlist et naviguer avec précédent/suivant. \\
+\hline
+BF14 & Présenter les actions musicales sous forme d'icônes claires avec des états visuels. \\
+\hline
 \end{longtable}
 
 \subsection{Besoins non fonctionnels}
@@ -731,6 +735,10 @@ des titres : nom de la chanson, artiste, album, image, durée et source. Cette
 présentation donne à l'utilisateur assez de contexte pour lancer la lecture,
 ajouter le titre aux favoris, le placer dans une playlist ou le partager.
 
+Le champ de recherche conserve une interface compacte : le bouton de validation
+est représenté par une icône de loupe, accompagnée d'un libellé accessible pour
+les lecteurs d'écran et les infobulles.
+
 \subsection{Lecture}
 
 Chaque titre peut être lancé depuis l'interface. Une attention particulière a
@@ -742,6 +750,18 @@ l'application met à jour la zone de lecture rapide et utilise l'URL audio
 fournie par l'API musicale. Si aucun extrait n'est disponible, l'interface peut
 continuer à afficher le titre sans déclencher de lecture.
 
+Pour les playlists, le frontend maintient une file de lecture. Lorsqu'un titre
+se termine, le lecteur passe au titre suivant de la même playlist et relance la
+lecture dès que le nouvel extrait audio est prêt. Des boutons précédent et
+suivant permettent aussi de naviguer manuellement dans cette file. Si un lien
+audio sauvegardé devient indisponible, l'application tente de récupérer une
+version actualisée du titre via l'API avant de passer au morceau suivant.
+
+Dans les cartes de titres, le bouton de lecture est intégré à l'image de
+couverture : une icône apparaît au survol ou au focus clavier. Cela garde les
+actions secondaires plus lisibles tout en conservant un accès direct à la
+lecture.
+
 \subsection{Favoris}
 
 Un utilisateur connecté peut sauvegarder un titre dans ses favoris et le
@@ -751,6 +771,11 @@ Chaque favori est rattaché au compte connecté. Cela permet d'avoir une
 bibliothèque personnelle différente pour chaque utilisateur. La contrainte
 d'unicité évite d'ajouter plusieurs fois le même titre dans les favoris d'un
 même compte.
+
+L'état d'un favori est visible dans l'interface : le bouton coeur passe à une
+couleur accentuée et l'icône devient remplie lorsque le titre est déjà
+sauvegardé. L'utilisateur distingue ainsi immédiatement un titre enregistré
+d'un titre non enregistré.
 
 \subsection{Playlists}
 
@@ -762,6 +787,11 @@ Les playlists complètent les favoris en ajoutant une organisation par listes.
 Elles sont utiles pour regrouper des chansons par thème, humeur ou usage. Le
 backend vérifie que l'utilisateur connecté est bien propriétaire de la playlist
 avant d'autoriser les modifications.
+
+La lecture depuis une playlist démarre soit depuis le premier titre de la liste,
+soit depuis le titre choisi par l'utilisateur. Dans les deux cas, le lecteur
+conserve le contexte de la playlist afin d'enchaîner automatiquement les titres
+suivants.
 
 \subsection{Partage}
 
@@ -798,6 +828,22 @@ Swagger UI fournit une documentation interactive des endpoints REST du backend.
 Elle facilite la vérification des routes, des paramètres et des modèles échangés
 entre le frontend Angular et l'API Spring Boot.
 
+\subsection{Améliorations de l'interface}
+
+Plusieurs ajustements ont été apportés à l'ergonomie de l'interface :
+
+\begin{itemize}
+    \item les actions répétées des cartes de titres et des lignes de playlist
+    utilisent principalement des icônes afin de réduire l'encombrement visuel ;
+    \item les boutons disposent de libellés accessibles avec \code{aria-label}
+    et de titres affichés au survol ;
+    \item le bouton de recherche est devenu une icône de loupe compacte ;
+    \item les boutons de suppression utilisent un style plus doux, avec un fond
+    clair et une couleur d'alerte moins agressive ;
+    \item la zone \textit{Lecture rapide} conserve des libellés texte pour les
+    actions principales afin de rester explicite sur l'écran d'accueil.
+\end{itemize}
+
 \section{Captures d'écran}
 
 Les captures suivantes ont été réalisées sur l'application locale. Elles
@@ -811,7 +857,7 @@ et documentation Swagger.
     \caption{Page d'authentification}
 \end{figure}
 
-\textbf{Explication de la figure :} cette page permet à l'utilisateur de se
+Cette page permet à l'utilisateur de se
 connecter à son compte. Elle constitue le point d'entrée vers les
 fonctionnalités privées de l'application.
 
@@ -821,7 +867,7 @@ fonctionnalités privées de l'application.
     \caption{Page d'inscription utilisateur}
 \end{figure}
 
-\textbf{Explication de la figure :} cette interface permet de créer un nouveau
+Cette interface permet de créer un nouveau
 compte utilisateur. Les informations saisies sont envoyées au backend pour
 enregistrer le profil et générer une première session.
 
@@ -831,7 +877,7 @@ enregistrer le profil et générer une première session.
     \caption{Accueil utilisateur et catalogue musical}
 \end{figure}
 
-\textbf{Explication de la figure :} l'écran d'accueil présente le catalogue
+L'écran d'accueil présente le catalogue
 musical après connexion. L'utilisateur peut parcourir les titres proposés,
 lancer une écoute ou accéder aux actions rapides.
 
@@ -841,7 +887,7 @@ lancer une écoute ou accéder aux actions rapides.
     \caption{Résultats d'une recherche de chanson}
 \end{figure}
 
-\textbf{Explication de la figure :} cette capture montre le résultat d'une
+Cette capture montre le résultat d'une
 recherche musicale. Les titres retournés par l'API sont affichés avec les
 informations nécessaires : artiste, album, image et actions disponibles.
 
@@ -851,7 +897,7 @@ informations nécessaires : artiste, album, image et actions disponibles.
     \caption{Message affiché après le partage d'un titre}
 \end{figure}
 
-\textbf{Explication de la figure :} le message confirme que le lien de partage
+Le message confirme que le lien de partage
 du titre a été généré. Ce lien peut être transmis à un autre utilisateur pour
 ouvrir directement le même morceau.
 
@@ -861,7 +907,7 @@ ouvrir directement le même morceau.
     \caption{Bibliothèque des titres favoris}
 \end{figure}
 
-\textbf{Explication de la figure :} cette page regroupe les titres sauvegardés
+Cette page regroupe les titres sauvegardés
 par l'utilisateur. Elle permet de retrouver rapidement ses morceaux préférés et
 de les gérer depuis un espace personnel.
 
@@ -871,7 +917,7 @@ de les gérer depuis un espace personnel.
     \caption{Gestion des playlists utilisateur}
 \end{figure}
 
-\textbf{Explication de la figure :} l'écran des playlists permet d'organiser
+L'écran des playlists permet d'organiser
 les chansons en listes personnalisées. L'utilisateur peut créer une playlist,
 y ajouter des titres ou retirer ceux qui ne sont plus souhaités.
 
@@ -881,7 +927,7 @@ y ajouter des titres ou retirer ceux qui ne sont plus souhaités.
     \caption{Page des paramètres du profil}
 \end{figure}
 
-\textbf{Explication de la figure :} cette page permet de modifier les
+Cette page permet de modifier les
 informations du profil, comme le nom d'affichage, l'avatar ou le mot de passe.
 Elle donne à l'utilisateur le contrôle sur ses données personnelles.
 
@@ -891,7 +937,7 @@ Elle donne à l'utilisateur le contrôle sur ses données personnelles.
     \caption{Interface d'administration}
 \end{figure}
 
-\textbf{Explication de la figure :} cette interface est réservée aux comptes
+Cette interface est réservée aux comptes
 administrateurs. Elle permet de consulter les statistiques et de gérer les
 utilisateurs de l'application.
 
@@ -901,7 +947,7 @@ utilisateurs de l'application.
     \caption{Documentation Swagger OpenAPI de l'API REST}
 \end{figure}
 
-\textbf{Explication de la figure :} Swagger UI présente automatiquement la
+Swagger UI présente automatiquement la
 documentation des endpoints REST. Cette page facilite le test des routes et la
 compréhension des données échangées entre frontend et backend.
 
