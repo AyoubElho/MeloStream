@@ -1,7 +1,7 @@
 \documentclass[12pt,a4paper]{report}
 
 % ------------------------------------------------------------
-% Rapport de projet - MeloStream
+% Rapport PFM - MeloStream
 % ------------------------------------------------------------
 
 \usepackage[utf8]{inputenc}
@@ -44,14 +44,20 @@
     linkcolor=primary,
     urlcolor=secondary,
     citecolor=primary,
-    pdftitle={Rapport de projet MeloStream},
+    pdftitle={Rapport de Projet de Fin de Module - MeloStream},
     pdfauthor={Ayoub El Houani, Oussama Felouach, Mbarek Ettaleby}
+}
+
+\addto\captionsfrench{
+    \renewcommand{\listfigurename}{Liste des figures}
+    \renewcommand{\listtablename}{Liste des tableaux}
+    \renewcommand{\tablename}{Tableau}
 }
 
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\textcolor{primary}{MeloStream}}
-\rhead{Rapport de projet}
+\rhead{Rapport PFM}
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -89,6 +95,13 @@
 
 \newcommand{\projectName}{MeloStream}
 \newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\techcard}[2]{%
+    \begin{minipage}[t]{2.12cm}
+        \centering
+        \includegraphics[height=0.85cm,keepaspectratio]{logos/#1}\par
+        {\scriptsize\bfseries #2\par}
+    \end{minipage}%
+}
 \newcommand{\tableHeader}{\rowcolor{primary!12}}
 
 \begin{document}
@@ -99,49 +112,55 @@
 
 \begin{titlepage}
     \centering
-    \vspace*{1.5cm}
+    \vspace*{0.9cm}
 
-    {\Huge\bfseries\textcolor{primary}{\projectName}\par}
-    \vspace{0.3cm}
-    {\Large Plateforme de streaming musical\par}
+    \includegraphics[width=5.4cm,trim=0 120 0 120,clip]{logos/enset_logo.png}
+
+    \vspace{1.25cm}
+    {\large \textbf{Projet :} Développement web full-stack\par}
+
+    \vspace{0.7cm}
+    \rule{0.86\textwidth}{0.4pt}
+
+    \vspace{0.95cm}
+    {\LARGE\bfseries MeloStream : plateforme de streaming musical\par}
+    \vspace{0.35cm}
+    {\large Cas d'étude : recherche, écoute et gestion de playlists\par}
+
+    \vspace{0.85cm}
+    \rule{0.86\textwidth}{0.4pt}
 
     \vspace{1.2cm}
     \begin{tikzpicture}
         \node[
-            rounded corners=14pt,
-            draw=primary,
-            line width=1pt,
-            fill=primary!7,
-            minimum width=0.78\textwidth,
-            minimum height=3.2cm,
-            align=center
+            fill=secondary!8,
+            minimum width=0.68\textwidth,
+            minimum height=4.55cm,
+            align=center,
+            inner sep=0.35cm
         ] {
-            {\Large \textbf{Rapport de projet}}\\[0.25cm]
-            Application web full-stack avec Spring Boot, Angular et MySQL
+            {\large \textbf{Réalisé par :}}\\[0.28cm]
+            Ayoub El Houani\\
+            Oussama Felouach\\
+            Mbarek Ettaleby\\[0.45cm]
+            {\large \textbf{Filière :} SDIA}\\[0.45cm]
+            {\large \textbf{Encadré par :}}\\[0.18cm]
+            Mme Oumayma AGHERAI
         };
     \end{tikzpicture}
 
     \vfill
-
-    \begin{tabular}{rl}
-        \textbf{Réalisé par :} &
-        \begin{tabular}[t]{l}
-            Ayoub El Houani \\
-            Oussama Felouach \\
-            Mbarek Ettaleby
-        \end{tabular} \\
-        \textbf{Type :} & Projet web full-stack \\
-        \textbf{Backend :} & Java 21, Spring Boot \\
-        \textbf{Frontend :} & Angular, TypeScript \\
-        \textbf{Base de données :} & MySQL \\
-    \end{tabular}
-
-    \vfill
-    {\large \textbf{Année universitaire :} 2025--2026\par}
+    {\large \textbf{Année universitaire :} 2025/2026\par}
 
 \end{titlepage}
 
 \tableofcontents
+\newpage
+\addcontentsline{toc}{chapter}{Liste des figures}
+\listoffigures
+\newpage
+\addcontentsline{toc}{chapter}{Liste des tableaux}
+\listoftables
 \newpage
 
 % ------------------------------------------------------------
@@ -233,6 +252,7 @@ L'application doit donc répondre à trois exigences majeures :
 \subsection{Besoins fonctionnels}
 
 \begin{longtable}{|p{2.4cm}|p{11.2cm}|}
+\caption{Besoins fonctionnels du projet} \\
 \hline
 \tableHeader \textbf{Référence} & \textbf{Description} \\
 \hline
@@ -269,6 +289,7 @@ BF14 & Présenter les actions musicales sous forme d'icônes claires avec des é
 \subsection{Besoins non fonctionnels}
 
 \begin{longtable}{|p{2.4cm}|p{11.2cm}|}
+\caption{Besoins non fonctionnels du projet} \\
 \hline
 \tableHeader \textbf{Référence} & \textbf{Description} \\
 \hline
@@ -316,7 +337,10 @@ musicales sont récupérées à la demande depuis des services externes.
 
 \section{Acteurs}
 
-\begin{longtable}{|p{3.5cm}|p{10.1cm}|}
+\begin{table}[!htbp]
+\centering
+\caption{Acteurs du système}
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
 \hline
 \tableHeader \textbf{Acteur} & \textbf{Rôle dans le système} \\
 \hline
@@ -328,153 +352,88 @@ Administrateur & Peut gérer les utilisateurs et consulter les statistiques. \\
 \hline
 API musicale externe & Fournit les titres, artistes, albums, images et audios. \\
 \hline
-\end{longtable}
+\end{tabularx}
+\end{table}
 
-\section{Diagramme de cas d'utilisation}
+\section{Diagrammes de cas d'utilisation}
+
+Les cas d'utilisation sont séparés par acteur afin de rendre la lecture plus
+claire. Chaque figure isole les actions accessibles à un profil donné, tandis
+que la généralisation de l'administrateur précise l'héritage des droits d'un
+utilisateur standard.
+
+\subsection{Cas du visiteur}
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[
-    actor/.style={draw, rounded corners, fill=secondary!10, minimum width=3.2cm, minimum height=0.8cm},
-    usecase/.style={draw, ellipse, fill=primary!8, minimum width=3.8cm, minimum height=0.9cm, align=center},
-    link/.style={-Latex, thick, color=muted},
-    generalization/.style={-{Triangle[open,length=3mm,width=3mm]}, thick, color=muted}
-]
-    \node[actor] (visitor) {Visiteur};
-    \node[actor, below=1.1cm of visitor] (user) {Utilisateur};
-    \node[actor, below=1.1cm of user] (admin) {Administrateur};
-
-    \node[usecase, right=3.2cm of visitor] (register) {S'inscrire};
-    \node[usecase, below=0.6cm of register] (login) {Se connecter};
-    \node[usecase, below=0.6cm of login] (search) {Rechercher};
-    \node[usecase, below=0.6cm of search] (listen) {Écouter};
-    \node[usecase, below=0.6cm of listen] (fav) {Gérer favoris};
-    \node[usecase, below=0.6cm of fav] (playlist) {Gérer playlists};
-    \node[usecase, below=0.6cm of playlist] (share) {Partager titre};
-    \node[usecase, below=0.6cm of share] (manage) {Gérer utilisateurs};
-
-    \draw[generalization] (admin.north) -- (user.south);
-    \draw[link] (visitor) -- (register);
-    \draw[link] (visitor) -- (login);
-    \draw[link] (user) -- (search);
-    \draw[link] (user) -- (listen);
-    \draw[link] (user) -- (fav);
-    \draw[link] (user) -- (playlist);
-    \draw[link] (user) -- (share);
-    \draw[link] (admin) -- (manage);
-\end{tikzpicture}
-\caption{Diagramme de cas d'utilisation simplifié}
+\includegraphics[width=0.62\textwidth,keepaspectratio]{01a-cas-visiteur.png}
+\caption{Diagramme de cas d'utilisation du visiteur}
 \end{figure}
 
-\textbf{Explication du diagramme :}
 \begin{itemize}
-    \item Le diagramme présente les principales interactions entre les acteurs
-    et l'application.
-    \item Le visiteur peut seulement créer un compte ou se connecter.
-    \item Après authentification, l'utilisateur accède aux fonctionnalités
-    musicales : recherche, écoute, favoris, playlists et partage.
-    \item La flèche de généralisation indique que l'administrateur est un
-    utilisateur spécialisé.
-    \item L'administrateur conserve les cas d'utilisation d'un utilisateur
-    connecté et ajoute la gestion des utilisateurs.
-    \item Cette représentation distingue les fonctionnalités publiques, les
-    fonctionnalités privées et les fonctionnalités d'administration.
+    \item Le visiteur représente une personne qui n'est pas encore authentifiée.
+    \item Il peut créer un compte afin d'accéder aux fonctionnalités privées de
+    la plateforme.
+    \item Il peut aussi se connecter lorsqu'il possède déjà un compte.
+\end{itemize}
+
+\subsection{Cas de l'utilisateur}
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.38\textheight,keepaspectratio]{01b-cas-utilisateur.png}
+\caption{Diagramme de cas d'utilisation de l'utilisateur}
+\end{figure}
+
+\begin{itemize}
+    \item L'utilisateur authentifié accède aux fonctionnalités musicales
+    principales de l'application.
+    \item Il peut rechercher et écouter des titres, gérer ses favoris et
+    organiser ses playlists.
+    \item Il peut partager un titre et ouvrir un lien de partage reçu depuis
+    l'application.
+    \item Il peut également consulter et modifier les informations de son
+    profil.
+\end{itemize}
+
+\subsection{Cas de l'administrateur}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth,keepaspectratio]{01c-cas-administrateur.png}
+\caption{Diagramme de cas d'utilisation de l'administrateur}
+\end{figure}
+
+\begin{itemize}
+    \item L'administrateur est une spécialisation de l'utilisateur.
+    \item La flèche de généralisation indique qu'il conserve les fonctionnalités
+    d'un utilisateur connecté.
+    \item Il dispose en plus de fonctionnalités propres : consulter les
+    statistiques et gérer les utilisateurs ainsi que leurs rôles.
 \end{itemize}
 
 \section{Diagramme de classes}
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[
-    class/.style={draw, rounded corners, fill=light, minimum width=4.2cm, align=left},
-    relation/.style={-Latex, thick, color=muted},
-    generalization/.style={-{Triangle[open,length=3mm,width=3mm]}, thick, color=muted}
-]
-    \node[class] (user) {
-        \textbf{UserAccount}\\
-        \rule{3.8cm}{0.2pt}\\
-        id\\
-        username\\
-        email\\
-        displayName\\
-        passwordHash\\
-        role
-    };
-
-    \node[class, above left=1.2cm and -0.2cm of user, minimum width=3.6cm] (standardUser) {
-        \textbf{Utilisateur}\\
-        \rule{3.2cm}{0.2pt}\\
-        role = USER\\
-        favoris\\
-        playlists
-    };
-
-    \node[class, above right=1.2cm and -0.2cm of user, minimum width=3.6cm] (adminUser) {
-        \textbf{Administrateur}\\
-        \rule{3.2cm}{0.2pt}\\
-        role = ADMIN\\
-        statistiques\\
-        gestion utilisateurs
-    };
-
-    \node[class, right=2cm of user] (token) {
-        \textbf{AuthToken}\\
-        \rule{3.8cm}{0.2pt}\\
-        id\\
-        token\\
-        user\\
-        createdAt\\
-        expiresAt
-    };
-
-    \node[class, below=1.4cm of user] (favorite) {
-        \textbf{FavoriteTrack}\\
-        \rule{3.8cm}{0.2pt}\\
-        id\\
-        user\\
-        trackId\\
-        title\\
-        artist\\
-        shareUrl
-    };
-
-    \node[class, right=2cm of favorite] (track) {
-        \textbf{TrackDto}\\
-        \rule{3.8cm}{0.2pt}\\
-        id\\
-        source\\
-        title\\
-        artist\\
-        audioUrl\\
-        tags
-    };
-
-    \draw[generalization] (standardUser.south) -- (user.north west);
-    \draw[generalization] (adminUser.south) -- (user.north east);
-    \draw[relation] (user) -- node[above]{1..*} (token);
-    \draw[relation] (user) -- node[left]{1..*} (favorite);
-    \draw[relation, dashed] (favorite) -- node[above]{référence} (track);
-\end{tikzpicture}
+\includegraphics[width=\textwidth,keepaspectratio]{02-diagramme-classes.png}
 \caption{Diagramme de classes principal}
 \end{figure}
 
-\textbf{Explication du diagramme :}
 \begin{itemize}
     \item Le diagramme décrit les entités principales utilisées par le backend.
     \item \code{UserAccount} représente le compte utilisateur avec son
     identifiant, son profil, son mot de passe hashé et son rôle.
     \item \code{AuthToken} conserve les jetons de session liés à un utilisateur
     pour authentifier les requêtes privées.
-    \item La généralisation montre que \code{Utilisateur} et
-    \code{Administrateur} sont deux spécialisations de \code{UserAccount}.
-    \item Dans le code Java, cette spécialisation est portée par le champ
-    \code{role} : \code{USER} pour les fonctions musicales et \code{ADMIN} pour
-    l'administration.
+    \item Le champ \code{role} relie \code{UserAccount} à l'énumération
+    \code{UserRole}. La valeur \code{USER} donne accès aux fonctions musicales,
+    tandis que la valeur \code{ADMIN} active les fonctions d'administration.
     \item \code{FavoriteTrack} sauvegarde les titres favoris d'un utilisateur,
     tandis que \code{TrackDto} représente un titre normalisé venant d'une API
     musicale externe.
-    \item Les classes \code{Playlist} et \code{PlaylistTrack} complètent le
-    modèle pour organiser les chansons en listes personnalisées.
+    \item \code{Playlist} et \code{PlaylistTrack} permettent d'organiser les
+    chansons en listes personnalisées appartenant à chaque utilisateur.
 \end{itemize}
 
 \section{Organisation des données}
@@ -518,25 +477,10 @@ directement au même titre.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[
-    box/.style={draw, rounded corners, fill=light, minimum width=4cm, minimum height=1cm, align=center},
-    arrow/.style={-Latex, thick, color=primary}
-]
-    \node[box] (browser) {Navigateur\\Utilisateur};
-    \node[box, below=1cm of browser] (angular) {Frontend Angular\\TypeScript + CSS};
-    \node[box, below=1cm of angular] (spring) {Backend Spring Boot\\API REST sécurisée};
-    \node[box, below left=1cm and 0.4cm of spring] (mysql) {MySQL\\users, tokens, favoris, playlists};
-    \node[box, below right=1cm and 0.4cm of spring] (music) {APIs musicales\\Deezer / Jamendo};
-
-    \draw[arrow] (browser) -- (angular);
-    \draw[arrow] (angular) -- node[right]{/api} (spring);
-    \draw[arrow] (spring) -- node[left]{JPA} (mysql);
-    \draw[arrow] (spring) -- node[right]{RestClient} (music);
-\end{tikzpicture}
+\includegraphics[width=0.9\textwidth,height=0.42\textheight,keepaspectratio]{melostream_architecture_monochrome.png}
 \caption{Architecture technique de MeloStream}
 \end{figure}
 
-\textbf{Explication du diagramme :}
 \begin{itemize}
     \item Le diagramme montre le chemin suivi par les données entre
     l'utilisateur et les couches techniques du système.
@@ -556,21 +500,42 @@ directement au même titre.
 
 \section{Technologies utilisées}
 
-\begin{longtable}{|p{3.6cm}|p{10cm}|}
+\begin{longtable}{|p{2.8cm}|p{11cm}|}
+\caption{Technologies utilisées dans le projet} \\
 \hline
 \tableHeader \textbf{Couche} & \textbf{Technologies} \\
 \hline
-Frontend & Angular 21, TypeScript, RxJS, CSS responsive, \code{@lucide/angular}. \\
+Frontend &
+\techcard{angular.png}{Angular 21}
+\techcard{typescript.png}{TypeScript}
+\techcard{reactivex.png}{RxJS}
+\techcard{lucide.png}{Lucide}
+\techcard{css.png}{CSS} \\
 \hline
-Backend & Java 21, Spring Boot 4.0.6, Spring Web MVC, Spring Security, Spring Data JPA. \\
+Backend &
+\techcard{openjdk.png}{Java 21}
+\techcard{springboot.png}{Spring Boot}
+\techcard{spring.png}{Spring MVC}
+\techcard{springsecurity.png}{Security}
+\techcard{spring.png}{Data JPA} \\
 \hline
-Base de données & MySQL avec accès possible via phpMyAdmin. \\
+Base de données &
+\techcard{mysql.png}{MySQL}
+\techcard{phpmyadmin.png}{phpMyAdmin} \\
 \hline
-Documentation API & Springdoc OpenAPI 3.0.3 et Swagger UI. \\
+Documentation API &
+\techcard{openapiinitiative.png}{OpenAPI}
+\techcard{swagger.png}{Swagger UI} \\
 \hline
-APIs externes & Deezer public API et Jamendo API optionnelle. \\
+APIs externes &
+\techcard{deezer.png}{Deezer}
+\techcard{jamendo.png}{Jamendo} \\
 \hline
-Tests & Spring Boot Test, H2 pour les tests backend, Angular/Vitest côté frontend. \\
+Tests &
+\techcard{springboot.png}{Spring Test}
+\techcard{h2database.png}{H2}
+\techcard{angular.png}{Angular}
+\techcard{vitest.png}{Vitest} \\
 \hline
 \end{longtable}
 
@@ -639,6 +604,7 @@ administrateur sont séparées des actions utilisateur.
 \section{Endpoints REST principaux}
 
 \begin{longtable}{|p{2.3cm}|p{5.6cm}|p{5.7cm}|}
+\caption{Endpoints REST principaux} \\
 \hline
 \tableHeader \textbf{Méthode} & \textbf{Endpoint} & \textbf{Description} \\
 \hline
@@ -716,7 +682,6 @@ par l'endpoint de connexion.
 
 L'utilisateur peut créer un compte, se connecter et se déconnecter. Après une
 connexion réussie, un jeton est utilisé pour sécuriser les requêtes suivantes.
-Les comptes de démonstration sont créés automatiquement au démarrage.
 
 Le formulaire d'authentification vérifie les informations saisies avant
 l'envoi au backend. Après une connexion réussie, l'utilisateur accède au tableau
@@ -951,134 +916,33 @@ Swagger UI présente automatiquement la
 documentation des endpoints REST. Cette page facilite le test des routes et la
 compréhension des données échangées entre frontend et backend.
 
-\section{Comptes de démonstration}
+\section{Validation de la réalisation}
 
-\begin{longtable}{|p{6cm}|p{4cm}|p{3cm}|}
+La validation a été effectuée sur les deux parties du projet afin de vérifier la
+stabilité de l'application et la cohérence entre le frontend et le backend.
+
+\begin{longtable}{|p{4cm}|p{9.6cm}|}
+\caption{Validation de la réalisation} \\
 \hline
-\tableHeader \textbf{Email} & \textbf{Mot de passe} & \textbf{Rôle} \\
+\tableHeader \textbf{Validation} & \textbf{Objectif} \\
 \hline
-\code{admin@melostream.local} & \code{admin123} & \code{ADMIN} \\
+Tests backend & Vérifier le chargement du contexte Spring Boot, la configuration
+principale et l'utilisation du profil de test avec une base H2 en mémoire. \\
 \hline
-\code{ayoub@melostream.local} & \code{ayoub123} & \code{USER} \\
+Tests frontend & Vérifier le comportement des composants Angular et les scénarios
+principaux de l'interface. \\
 \hline
-\code{demo@melostream.local} & \code{demo123} & \code{USER} \\
+Build frontend & Confirmer que l'application Angular se compile correctement, que
+les imports TypeScript sont valides et que les fichiers de production sont générés. \\
 \hline
-\code{user@melostream.local} & \code{user123} & \code{USER} \\
-\hline
-\code{root@melostream.local} & \code{root123} & \code{ADMIN} \\
+Documentation API & Vérifier que Swagger UI expose les endpoints REST et les DTO
+nécessaires à la compréhension de l'API. \\
 \hline
 \end{longtable}
 
-% ------------------------------------------------------------
-% Installation
-% ------------------------------------------------------------
-
-\chapter{Installation et lancement}
-
-\section{Prérequis}
-
-\begin{itemize}
-    \item Java 21.
-    \item Node.js et npm.
-    \item MySQL local.
-    \item Maven Wrapper inclus dans le backend.
-\end{itemize}
-
-\section{Configuration de la base}
-
-La configuration par défaut utilise MySQL en local :
-
-\begin{lstlisting}
-database: music_stream
-username: root
-password: vide
-\end{lstlisting}
-
-La base est créée automatiquement grâce à l'option
-\code{createDatabaseIfNotExist=true}.
-
-Au premier démarrage, Hibernate crée ou met à jour les tables nécessaires selon
-les entités JPA du projet. Le composant de démarrage ajoute ensuite les comptes
-de démonstration si ceux-ci n'existent pas encore. Cette configuration simplifie
-les tests en local, car l'application peut être lancée sans script SQL manuel.
-
-\section{Lancement du backend}
-
-\begin{lstlisting}
-cd backend
-.\mvnw.cmd spring-boot:run
-\end{lstlisting}
-
-Le backend démarre sur :
-
-\begin{lstlisting}
-http://localhost:8080
-\end{lstlisting}
-
-La documentation Swagger est ensuite disponible sur :
-
-\begin{lstlisting}
-http://localhost:8080/swagger-ui.html
-\end{lstlisting}
-
-\section{Lancement du frontend}
-
-\begin{lstlisting}
-cd frontend
-npm install
-npm start
-\end{lstlisting}
-
-Le frontend démarre sur :
-
-\begin{lstlisting}
-http://localhost:4200
-\end{lstlisting}
-
-\section{Activation optionnelle de Jamendo}
-
-Pour utiliser Jamendo, il faut définir la variable d'environnement suivante
-avant de lancer le backend :
-
-\begin{lstlisting}
-$env:JAMENDO_CLIENT_ID="ton_client_id_jamendo"
-\end{lstlisting}
-
-% ------------------------------------------------------------
-% Vérification
-% ------------------------------------------------------------
-
-\chapter{Vérification}
-
-\section{Tests backend}
-
-\begin{lstlisting}
-cd backend
-.\mvnw.cmd test
-\end{lstlisting}
-
-Les tests backend utilisent le profil de test et une base H2 en mémoire. Cela
-permet de vérifier le chargement du contexte Spring Boot et la configuration
-principale sans dépendre de la base MySQL locale.
-
-\section{Tests frontend}
-
-\begin{lstlisting}
-cd frontend
-npm test -- --watch=false
-\end{lstlisting}
-
-\section{Build frontend}
-
-\begin{lstlisting}
-cd frontend
-npm run build
-\end{lstlisting}
-
-Le build frontend vérifie que l'application Angular se compile correctement,
-que les imports TypeScript sont valides et que les fichiers de production sont
-générés dans le dossier \code{dist}. Cette étape complète les tests backend et
-confirme que les deux parties du projet peuvent être lancées ensemble.
+Ces vérifications confirment que les fonctionnalités principales développées
+peuvent être utilisées ensemble : authentification, recherche musicale, lecture,
+favoris, playlists, partage, administration et documentation API.
 
 % ------------------------------------------------------------
 % Conclusion
@@ -1087,17 +951,31 @@ confirme que les deux parties du projet peuvent être lancées ensemble.
 \chapter*{Conclusion}
 \addcontentsline{toc}{chapter}{Conclusion}
 
-Le projet \projectName{} répond aux objectifs fixés : il propose une plateforme
-musicale complète avec authentification, recherche, lecture, favoris, playlists,
-partage et administration. L'architecture sépare clairement le frontend Angular, le
-backend Spring Boot et la base MySQL, ce qui facilite la maintenance et les
-évolutions futures.
+\section*{Résumé du projet}
+
+Le projet \projectName{} répond aux objectifs fixés dans le cahier des charges :
+il propose une plateforme musicale complète avec authentification, recherche,
+lecture, favoris, playlists, partage et administration. L'architecture sépare
+clairement le frontend Angular, le backend Spring Boot et la base MySQL, ce qui
+facilite la maintenance et les évolutions futures.
+
+\section*{Défis rencontrés}
 
 Les principaux défis rencontrés concernent l'intégration des API musicales
-externes, la gestion des liens de partage et la sécurisation des endpoints. Le
-projet dispose aussi d'une documentation Swagger/OpenAPI qui facilite la
-consultation et le test des routes REST. Il peut encore être amélioré avec une
-route Angular dédiée au partage, davantage de tests d'intégration et une
-configuration de déploiement adaptée à la production.
+externes, la disponibilité variable des liens audio, la gestion des liens de
+partage et la sécurisation des endpoints privés. La synchronisation du lecteur
+audio avec les playlists a également nécessité une attention particulière afin
+d'assurer le passage automatique au titre suivant et la navigation
+précédent/suivant.
+
+\section*{Recommandations et perspectives}
+
+Pour améliorer et maintenir la solution, il est recommandé d'ajouter davantage
+de tests d'intégration, de préparer une configuration de déploiement avec des
+variables d'environnement séparées, d'ajouter une route Angular dédiée au
+partage et d'améliorer l'observabilité de l'application. À plus long terme, la
+plateforme pourrait intégrer une pagination avancée du catalogue, une gestion
+plus complète des playlists et une stratégie de cache pour limiter les appels
+aux APIs musicales externes.
 
 \end{document}

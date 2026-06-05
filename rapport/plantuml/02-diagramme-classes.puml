@@ -1,0 +1,90 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ClassBorderColor #111827
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ArrowColor #6B7280
+skinparam stereotypeCBackgroundColor #ECFDF5
+
+title MeloStream - Diagramme de classes principal
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+class UserAccount {
+  Long id
+  String username
+  String email
+  String displayName
+  String passwordHash
+  UserRole role
+  String avatarUrl
+  Instant createdAt
+}
+
+class AuthToken {
+  Long id
+  String token
+  Instant createdAt
+  Instant expiresAt
+}
+
+class FavoriteTrack {
+  Long id
+  String source
+  String trackId
+  String title
+  String artist
+  String album
+  String imageUrl
+  String audioUrl
+  Integer duration
+  String shareUrl
+}
+
+class Playlist {
+  Long id
+  String name
+  Instant createdAt
+  Instant updatedAt
+}
+
+class PlaylistTrack {
+  Long id
+  String source
+  String trackId
+  String title
+  String artist
+  String album
+  String imageUrl
+  String audioUrl
+  Integer duration
+  String shareUrl
+}
+
+class TrackDto <<DTO>> {
+  String id
+  String source
+  String title
+  String artist
+  String album
+  String imageUrl
+  String audioUrl
+  Integer duration
+  String shareUrl
+  List<String> tags
+}
+
+UserAccount "1" o-- "0..*" AuthToken : sessions
+UserAccount "1" o-- "0..*" FavoriteTrack : favoris
+UserAccount "1" o-- "0..*" Playlist : playlists
+Playlist "1" o-- "0..*" PlaylistTrack : titres
+UserAccount --> UserRole : role
+FavoriteTrack ..> TrackDto : reference musicale
+PlaylistTrack ..> TrackDto : reference musicale
+@enduml

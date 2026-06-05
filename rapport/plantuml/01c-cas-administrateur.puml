@@ -1,0 +1,27 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #6B7280
+skinparam ActorBorderColor #2563EB
+skinparam ActorBackgroundColor #EFF6FF
+skinparam UsecaseBorderColor #0F766E
+skinparam UsecaseBackgroundColor #ECFDF5
+skinparam RectangleBorderColor #D1D5DB
+skinparam RectangleBackgroundColor #F8FAFC
+
+title MeloStream - Cas de l'administrateur
+
+actor "Utilisateur" as User
+actor "Administrateur" as Admin
+
+Admin -up-|> User : généralisation
+
+usecase "Consulter les\nstatistiques" as UCStats
+usecase "Gérer les utilisateurs\net les rôles" as UCAdminUsers
+
+Admin --> UCStats
+Admin --> UCAdminUsers
+@enduml

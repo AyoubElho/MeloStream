@@ -6,7 +6,7 @@ morceaux, ecouter des extraits ou des titres disponibles, gerer des favoris,
 organiser des playlists, administrer les utilisateurs et partager un titre avec
 un lien direct.
 
-Ce fichier sert de documentation principale du projet. Le rapport LaTeX est
+Ce fichier sert de documentation principale du projet. Le rapport PFM est
 disponible dans `rapport/rapport.tex`, avec une version PDF generee dans
 `rapport/rapport.pdf`.
 
@@ -31,10 +31,15 @@ morceaux libres/licencies avec un `client_id`.
   profil.
 - Afficher un catalogue musical consultable par recherche ou humeur.
 - Permettre l'ecoute d'un titre sans lecture automatique apres connexion.
+- Permettre la lecture depuis une playlist avec passage automatique au titre
+  suivant.
+- Ajouter les controles precedent/suivant du lecteur.
 - Ajouter, supprimer et consulter les titres favoris.
 - Creer des playlists et y organiser des chansons.
 - Partager un titre avec un lien accessible par un autre utilisateur.
 - Fournir une interface d'administration protegee par role.
+- Produire un rapport PFM structure avec figures, tableaux, diagrammes et
+  captures d'ecran.
 - Documenter le projet dans un seul fichier README clair et maintenable.
 
 ## 2. Cahier des charges
@@ -55,7 +60,7 @@ externes tout en gardant une structure propre et evolutive.
 | BF03 | Consulter le profil connecte. |
 | BF04 | Modifier le nom, l'email, le nom d'affichage et l'avatar. |
 | BF05 | Rechercher des titres par mot-cle ou par humeur. |
-| BF06 | Ecouter un titre depuis le lecteur integre. |
+| BF06 | Ecouter un titre depuis le lecteur integre, une playlist ou les favoris. |
 | BF07 | Sauvegarder un titre dans les favoris. |
 | BF08 | Supprimer un titre des favoris. |
 | BF09 | Creer, renommer et supprimer une playlist. |
@@ -64,6 +69,7 @@ externes tout en gardant une structure propre et evolutive.
 | BF12 | Ouvrir un lien de partage et charger le titre correspondant. |
 | BF13 | Consulter les statistiques administrateur. |
 | BF14 | Lister, promouvoir, retrograder et supprimer des utilisateurs. |
+| BF15 | Enchainer automatiquement le titre suivant d'une playlist. |
 
 ### 2.3 Besoins non fonctionnels
 
@@ -75,7 +81,7 @@ externes tout en gardant une structure propre et evolutive.
 | BNF04 | Separation claire entre controllers, services, repositories, DTO et mappers. |
 | BNF05 | Base MySQL creee automatiquement si elle n'existe pas. |
 | BNF06 | Code testable avec tests frontend et backend. |
-| BNF07 | Couleurs simples, lisibles et coherentes. |
+| BNF07 | Interface lisible avec icones claires, etats visuels et couleurs coherentes. |
 
 ### 2.4 Solution proposee
 
@@ -100,36 +106,41 @@ titres musicaux viennent principalement de Deezer ou Jamendo.
 | Administrateur | Peut gerer les utilisateurs et consulter les statistiques. |
 | API musicale externe | Fournit les titres, pochettes, artistes et audios. |
 
-### 3.2 Cas d'utilisation
+### 3.2 Diagrammes de cas d'utilisation
 
 | Acteur | Cas d'utilisation |
 | --- | --- |
 | Visiteur | Inscription, connexion. |
-| Utilisateur | Recherche musicale, lecture, favoris, playlists, partage, modification du profil. |
+| Utilisateur | Recherche musicale, lecture, favoris, playlists, partage, lien de partage et modification du profil. |
 | Administrateur | Consultation des statistiques, gestion des utilisateurs et roles. |
 | API externe | Recherche de titres, recuperation d'un titre par source et identifiant. |
 
-Diagramme simplifie:
+Les cas d'utilisation sont presentes en trois figures separees pour rendre la
+lecture plus claire. La generalisation indique que l'administrateur conserve les
+fonctionnalites d'un utilisateur connecte, puis ajoute ses actions propres.
 
-```text
-Visiteur
-  -> S'inscrire
-  -> Se connecter
+#### Cas du visiteur
 
-Utilisateur
-  -> Rechercher un titre
-  -> Ecouter un titre
-  -> Ajouter aux favoris
-  -> Retirer des favoris
-  -> Gerer ses playlists
-  -> Partager un titre
-  -> Modifier le profil
+<img src="rapport/images/01a-cas-visiteur.png" alt="Diagramme de cas d'utilisation du visiteur" width="55%">
 
-Administrateur
-  -> Voir les statistiques
-  -> Gerer les utilisateurs
-  -> Modifier les roles
-```
+Le visiteur represente une personne non authentifiee. Il peut creer un compte
+ou se connecter a un compte existant.
+
+#### Cas de l'utilisateur
+
+<img src="rapport/images/01b-cas-utilisateur.png" alt="Diagramme de cas d'utilisation de l'utilisateur" width="55%">
+
+L'utilisateur authentifie peut rechercher et ecouter des titres, gerer ses
+favoris, organiser ses playlists, partager un titre, ouvrir un lien de partage
+et modifier son profil.
+
+#### Cas de l'administrateur
+
+<img src="rapport/images/01c-cas-administrateur.png" alt="Diagramme de cas d'utilisation de l'administrateur" width="70%">
+
+L'administrateur est une specialisation de l'utilisateur. Il garde les
+fonctionnalites utilisateur et ajoute la consultation des statistiques ainsi que
+la gestion des utilisateurs et des roles.
 
 ### 3.3 Modele de domaine
 
@@ -167,20 +178,15 @@ PlaylistTrack ---- reference externe vers TrackDto
 
 ### 4.1 Architecture generale
 
-```text
-Navigateur
-   |
-   v
-Angular frontend
-   |
-   | /api via proxy Angular
-   v
-Spring Boot backend
-   |                 |
-   | JPA             | RestClient
-   v                 v
-MySQL            Deezer / Jamendo
-```
+<img src="rapport/images/melostream_architecture_monochrome.svg" alt="Architecture generale de MeloStream" width="85%">
+
+L'architecture separe les responsabilites principales:
+
+- le navigateur affiche l'application Angular;
+- Angular communique avec le backend Spring Boot via les routes `/api`;
+- Spring Boot gere la logique metier, la securite et les endpoints REST;
+- MySQL conserve les comptes, les favoris, les playlists et les jetons;
+- les API Deezer et Jamendo fournissent les donnees musicales externes.
 
 ### 4.2 Technologies utilisees
 
@@ -226,6 +232,14 @@ project web/
     proxy.conf.json
   rapport/
     images/
+      logos/
+      01a-cas-visiteur.png
+      01b-cas-utilisateur.png
+      01c-cas-administrateur.png
+      02-diagramme-classes.png
+      melostream_architecture_monochrome.svg
+      melostream_architecture_monochrome.png
+      captures d'ecran de realisation
     rapport.tex
     rapport.pdf
   README.md
@@ -292,6 +306,9 @@ bouton `Authorize` avec le jeton d'authentification retourne par la connexion.
 - Catalogue de titres avec pochettes, artistes et albums.
 - Lecteur rapide avec bouton d'ecoute.
 - Absence de lecture automatique juste apres connexion.
+- Lecture d'un titre depuis une playlist.
+- Passage automatique au titre suivant a la fin d'un morceau dans une playlist.
+- Boutons precedent et suivant pour naviguer dans la playlist.
 - Gestion des favoris.
 - Gestion des playlists: creation, renommage, suppression, ajout et retrait de titres.
 - Bouton de partage sur chaque chanson.
@@ -299,7 +316,10 @@ bouton `Authorize` avec le jeton d'authentification retourne par la connexion.
 - Message de confirmation apres partage.
 - Interface admin pour les comptes ayant le role `ADMIN`.
 - Documentation interactive de l'API avec Swagger UI.
-- Nouvelle interface avec couleurs simples et icones.
+- Nouvelle interface avec icones seules pour les actions secondaires.
+- Bouton de recherche en icone seule.
+- Bouton de lecture place sur l'image de la chanson au survol.
+- Etat visuel plus clair pour le bouton favori.
 
 ### 5.2 Captures d'ecran
 
@@ -359,17 +379,20 @@ LaTeX. La grille suivante presente tous les ecrans principaux du projet.
   </tr>
 </table>
 
-### 5.3 Comptes demo
+### 5.3 Rapport PFM
 
-Les comptes suivants sont crees automatiquement au demarrage si absents:
+Le dossier `rapport/` contient le rapport PFM au format LaTeX et PDF. Le
+document comprend une page de garde, une table des matieres, une liste des
+figures, une liste des tableaux, les diagrammes de conception, l'architecture
+technique et les captures d'ecran de la realisation.
 
-| Email | Mot de passe | Role |
-| --- | --- | --- |
-| `admin@melostream.local` | `admin123` | `ADMIN` |
-| `ayoub@melostream.local` | `ayoub123` | `USER` |
-| `demo@melostream.local` | `demo123` | `USER` |
-| `user@melostream.local` | `user123` | `USER` |
-| `root@melostream.local` | `root123` | `ADMIN` |
+Les diagrammes de cas d'utilisation sont separes en trois figures:
+
+- `rapport/images/01a-cas-visiteur.png`
+- `rapport/images/01b-cas-utilisateur.png`
+- `rapport/images/01c-cas-administrateur.png`
+
+La figure administrateur conserve la generalisation vers l'utilisateur.
 
 ## 6. Installation et lancement
 
