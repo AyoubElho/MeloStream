@@ -19,6 +19,7 @@ Le rapport complet du livrable est disponible ici:
 
 - [Objectif du projet](#objectif-du-projet)
 - [Fonctionnalites](#fonctionnalites)
+- [Captures d'ecran](#captures-decran)
 - [Architecture](#architecture)
 - [Technologies utilisees](#technologies-utilisees)
 - [Structure du projet](#structure-du-projet)
@@ -72,6 +73,63 @@ Les objectifs principaux sont:
 - Documentation OpenAPI accessible avec Swagger UI.
 - Endpoints classes par module: authentification, titres, favoris, playlists et
   administration.
+
+## Captures d'ecran
+
+Les captures suivantes presentent les principaux ecrans de l'application.
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/01-authentification.png" alt="Page d'authentification" width="100%">
+      <br><strong>Authentification</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/08-inscription-utilisateur.png" alt="Page d'inscription utilisateur" width="100%">
+      <br><strong>Inscription utilisateur</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/02-accueil-catalogue.png" alt="Accueil utilisateur et catalogue musical" width="100%">
+      <br><strong>Accueil et catalogue</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/07-recherche-chanson.png" alt="Resultats de recherche musicale" width="100%">
+      <br><strong>Recherche musicale</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/03-partage-titre.png" alt="Partage d'un titre" width="100%">
+      <br><strong>Partage de titre</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/04-favoris.png" alt="Liste des favoris" width="100%">
+      <br><strong>Favoris</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/09-playlists.png" alt="Gestion des playlists" width="100%">
+      <br><strong>Playlists</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/06-parametres.png" alt="Parametres du profil" width="100%">
+      <br><strong>Parametres du profil</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="rapport/images/05-administration.png" alt="Interface d'administration" width="100%">
+      <br><strong>Administration</strong>
+    </td>
+    <td width="50%">
+      <img src="rapport/images/10-swagger-openapi.png" alt="Documentation Swagger OpenAPI" width="100%">
+      <br><strong>Swagger OpenAPI</strong>
+    </td>
+  </tr>
+</table>
 
 ## Architecture
 
