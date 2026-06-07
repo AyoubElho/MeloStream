@@ -361,13 +361,15 @@ tectonic rapport.tex
 
 ### Perspectives
 
-- Ajouter une route Angular dediee aux titres partages.
-- Ajouter plus de tests d'integration sur les endpoints critiques.
-- Preparer un deploiement avec variables d'environnement separees.
-- Ajouter une pagination avancee pour les grands catalogues.
-- Enrichir Swagger avec des exemples de requetes et de reponses.
-- Verifier les conditions d'utilisation des API musicales avant une mise en
-  production.
+- Ajouter davantage de tests d'integration.
+- Preparer une configuration de deploiement avec des variables d'environnement
+  separees.
+- Ajouter une route Angular dediee au partage.
+- Ameliorer l'observabilite de l'application.
+- Integrer une pagination avancee du catalogue.
+- Ajouter une gestion plus complete des playlists.
+- Mettre en place une strategie de cache pour limiter les appels aux APIs
+  musicales externes.
 
 ## Conclusion
 
