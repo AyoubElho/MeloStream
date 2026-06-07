@@ -19,9 +19,13 @@ actor "Administrateur" as Admin
 
 Admin -up-|> User : généralisation
 
+usecase "S'authentifier" as UCAuth
 usecase "Consulter les\nstatistiques" as UCStats
 usecase "Gérer les utilisateurs\net les rôles" as UCAdminUsers
 
 Admin --> UCStats
 Admin --> UCAdminUsers
+
+UCStats ..> UCAuth : <<include>>
+UCAdminUsers ..> UCAuth : <<include>>
 @enduml

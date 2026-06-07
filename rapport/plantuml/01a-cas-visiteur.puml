@@ -18,7 +18,6 @@ actor "Visiteur" as Visitor
 
 usecase "S'inscrire" as UCRegister
 usecase "Se connecter" as UCLogin
-
 Visitor --> UCRegister
 Visitor --> UCLogin
 @enduml

@@ -16,6 +16,7 @@ title MeloStream - Cas de l'utilisateur
 
 actor "Utilisateur" as User
 
+usecase "S'authentifier" as UCAuth
 usecase "Consulter et modifier\nle profil" as UCProfile
 usecase "Rechercher un titre" as UCSearch
 usecase "Écouter un titre" as UCListen
@@ -31,4 +32,12 @@ User --> UCFavorites
 User --> UCPlaylists
 User --> UCShare
 User --> UCSharedSong
+
+UCProfile ..> UCAuth : <<include>>
+UCSearch ..> UCAuth : <<include>>
+UCListen ..> UCAuth : <<include>>
+UCFavorites ..> UCAuth : <<include>>
+UCPlaylists ..> UCAuth : <<include>>
+UCShare ..> UCAuth : <<include>>
+UCSharedSong ..> UCAuth : <<include>>
 @enduml

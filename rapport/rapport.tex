@@ -394,6 +394,8 @@ utilisateur standard.
     l'application.
     \item Il peut également consulter et modifier les informations de son
     profil.
+    \item Les cas d'utilisation privés incluent \code{S'authentifier}, car ils
+    nécessitent une session utilisateur valide.
 \end{itemize}
 
 \subsection{Cas de l'administrateur}
@@ -410,6 +412,9 @@ utilisateur standard.
     d'un utilisateur connecté.
     \item Il dispose en plus de fonctionnalités propres : consulter les
     statistiques et gérer les utilisateurs ainsi que leurs rôles.
+    \item Les fonctionnalités d'administration incluent aussi
+    \code{S'authentifier}, puis le contrôle du rôle \code{ADMIN} est appliqué
+    par le backend.
 \end{itemize}
 
 \section{Diagramme de classes}
@@ -477,7 +482,7 @@ directement au même titre.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\textwidth,height=0.42\textheight,keepaspectratio]{melostream_architecture_monochrome.png}
+\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{"ChatGPT Image 7 juin 2026, 22_28_08.png"}
 \caption{Architecture technique de MeloStream}
 \end{figure}
 
@@ -508,8 +513,6 @@ directement au même titre.
 Frontend &
 \techcard{angular.png}{Angular 21}
 \techcard{typescript.png}{TypeScript}
-\techcard{reactivex.png}{RxJS}
-\techcard{lucide.png}{Lucide}
 \techcard{css.png}{CSS} \\
 \hline
 Backend &
@@ -533,9 +536,7 @@ APIs externes &
 \hline
 Tests &
 \techcard{springboot.png}{Spring Test}
-\techcard{h2database.png}{H2}
-\techcard{angular.png}{Angular}
-\techcard{vitest.png}{Vitest} \\
+\techcard{angular.png}{Angular} \\
 \hline
 \end{longtable}
 
@@ -927,7 +928,7 @@ stabilité de l'application et la cohérence entre le frontend et le backend.
 \tableHeader \textbf{Validation} & \textbf{Objectif} \\
 \hline
 Tests backend & Vérifier le chargement du contexte Spring Boot, la configuration
-principale et l'utilisation du profil de test avec une base H2 en mémoire. \\
+principale et l'utilisation du profil de test dédié. \\
 \hline
 Tests frontend & Vérifier le comportement des composants Angular et les scénarios
 principaux de l'interface. \\
